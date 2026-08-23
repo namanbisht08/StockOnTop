@@ -64,6 +64,40 @@ follow. Notable simplifications, documented in code where they matter most:
   curve, so they understate intra-period volatility when multiple positions
   are open at once.
 
+## Deployment
+
+Runs on a persistent Docker host (not the plan's default GitHub-Actions/local-
+cron path - see note below) so the SQLite database survives between runs:
+
+```bash
+docker compose build app
+docker compose up -d app          # starts the FastAPI app (GET /health)
+docker compose exec app alembic upgrade head
+docker compose exec app python scripts/seed_universe.py
+docker compose exec app python scripts/download_history.py
+docker compose exec app python scripts/run_weekly_scan.py
+```
+
+A host crontab runs `weekly_run.sh` (download fresh data, then scan) every
+Sunday at 12:30 UTC / 18:00 IST, logging to `logs/weekly.log`. `run_weekly_scan`
+has an idempotency guard - a duplicate trigger the same day is a no-op rather
+than a duplicate recommendation or a second Telegram message.
+
+Notes:
+- `.env` holds real secrets and is never committed; it's copied to the host
+  out-of-band (scp), not via git.
+- The Ollama service in `docker-compose.yml` is opt-in (`--profile ollama`) -
+  Gemini is the primary LLM provider, and the app degrades to a
+  deterministic-only report if no provider is reachable, so a small instance
+  isn't forced to run an idle local-LLM container.
+- Port 8000 (the health endpoint) is only reachable from inside the host/VPC,
+  not the public internet - deliberate, since the plan calls for no public
+  endpoints in v1.
+- This deviates from the plan's ₹0/month default: a persistent cloud instance
+  running 24/7 has a real (small) cost, unlike GitHub Actions' free tier or
+  a machine you already own. Chosen here to sidestep GitHub Actions' ephemeral
+  runners (a fresh SQLite DB every run) without giving up scheduled execution.
+
 ## Milestone Status
 
 - [x] Milestone 1 — Project foundation
@@ -77,7 +111,9 @@ follow. Notable simplifications, documented in code where they matter most:
 - [x] Milestone 8 — Reporting (text report + Telegram delivery + recommendation
       persistence done; HTML report and email are optional/deferred per the plan)
 - [ ] Milestone 9 — Paper trading
-- [ ] Milestone 10 — Free production execution
+- [x] Milestone 10 — Production execution (weekly cron on a persistent Docker
+      host, per the Deployment section above - a paid instance rather than the
+      plan's ₹0/month GitHub-Actions/local-cron default, see notes above)
 
 ## Disclaimer
 This is a research/decision-support system, not an automated trading bot. Real-money trading should begin only after adequate backtesting and paper trading.
