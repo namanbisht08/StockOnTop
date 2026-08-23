@@ -9,6 +9,13 @@ name: EC2 Schedule
 #
 # Uses GitHub OIDC to assume an IAM role scoped to start/stop only this one
 # instance - no long-lived AWS credentials are stored as secrets.
+#
+# Note for future debugging: the IAM role's trust policy condition must match
+# the actual `sub` claim GitHub issues, which is
+# "repo:<owner>@<owner_id>/<repo>@<repo_id>:ref:refs/heads/main" - not the
+# plain "repo:<owner>/<repo>:*" shown in most older docs/examples. A trust
+# policy using the old format fails with an opaque "Not authorized to
+# perform sts:AssumeRoleWithWebIdentity".
 
 on:
   schedule:
@@ -36,17 +43,6 @@ jobs:
   manage-instance:
     runs-on: ubuntu-latest
     steps:
-      - name: Debug OIDC token claims
-        run: |
-          TOKEN=$(curl -sS -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
-            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=sts.amazonaws.com" | jq -r '.value')
-          python3 -c "
-          import base64, json, sys
-          payload = '$TOKEN'.split('.')[1]
-          payload += '=' * (-len(payload) % 4)
-          print(json.dumps(json.loads(base64.urlsafe_b64decode(payload)), indent=2))
-          "
-
       - name: Configure AWS credentials via OIDC
         uses: aws-actions/configure-aws-credentials@v4
         with:
