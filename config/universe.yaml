@@ -26,6 +26,6 @@ stocks:
   - symbol: BAJFINANCE
     company_name: Bajaj Finance Limited
     sector: Financial Services
-  - symbol: L&T
+  - symbol: LT
     company_name: Larsen & Toubro Limited
     sector: Construction
