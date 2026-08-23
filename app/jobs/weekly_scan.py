@@ -1,12 +1,18 @@
 import sys
 from datetime import date
+from typing import Optional
 
 import pandas as pd
 
+from app.ai.analyzer import CandidateAnalyzer
+from app.ai.provider import build_default_providers
+from app.core.config import get_settings, get_strategy_config
 from app.core.logging import get_logger
 from app.db.models import Candle, Recommendation, ScanRun, Stock
 from app.db.session import SessionLocal
 from app.indicators.engine import calculate_indicators
+from app.reports.generator import generate_telegram_message
+from app.reports.telegram import TelegramNotificationError, TelegramNotifier
 from app.strategy.market_regime import MarketRegime
 from app.strategy.strategy import StrategyEngine
 
@@ -25,6 +31,32 @@ def _load_candle_df(db, symbol: str) -> pd.DataFrame:
     )
     df = pd.DataFrame([c.__dict__ for c in candles])
     return df.drop("_sa_instance_state", axis=1, errors="ignore")
+
+
+def _safe_float(value) -> Optional[float]:
+    if value is None or pd.isna(value):
+        return None
+    return float(value)
+
+
+def _send_telegram_report(final_picks, regime: str) -> None:
+    settings = get_settings()
+    if not settings.telegram_bot_token or not settings.telegram_chat_id:
+        logger.info("Telegram not configured; skipping notification")
+        return
+
+    capital = get_strategy_config().portfolio.capital
+    message = generate_telegram_message(final_picks, regime, capital)
+    try:
+        notifier = TelegramNotifier(
+            settings.telegram_bot_token, settings.telegram_chat_id
+        )
+        notifier.send_message(message)
+        logger.info("Telegram notification sent")
+    except TelegramNotificationError as e:
+        # A failed notification must never fail the scan itself - the
+        # recommendations are already persisted (plan section 45).
+        logger.error(f"Telegram notification failed: {e}")
 
 
 def run_weekly_scan():
@@ -53,6 +85,7 @@ def run_weekly_scan():
         scan_run.market_regime = regime
 
         candidates = []
+        indicators_by_symbol = {}
 
         for stock in stocks:
             df = _load_candle_df(db, stock.symbol)
@@ -69,13 +102,35 @@ def run_weekly_scan():
                 continue
 
             candidates.append(plan)
+            indicators_by_symbol[plan.symbol] = {
+                "rsi14": _safe_float(latest.get("rsi14")),
+                "adx": _safe_float(latest.get("adx")),
+                "relative_volume": _safe_float(latest.get("relative_volume")),
+                "relative_strength_20d": _safe_float(
+                    latest.get("relative_strength_20d")
+                ),
+                "relative_strength_60d": _safe_float(
+                    latest.get("relative_strength_60d")
+                ),
+            }
 
         scan_run.candidate_count = len(candidates)
 
         final_picks = StrategyEngine.select_final_picks(candidates)
         scan_run.final_count = len(final_picks)
 
+        analyzer = CandidateAnalyzer(build_default_providers())
+
         for idx, plan in enumerate(final_picks):
+            analysis = analyzer.analyze(
+                plan,
+                indicators=indicators_by_symbol.get(plan.symbol, {}),
+                news_headlines=[],  # news provider integration is not built yet
+                market_regime=regime,
+            )
+            if analysis.ai_status != "ok":
+                logger.info(f"{plan.symbol}: AI explanation unavailable")
+
             rec = Recommendation(
                 run_id=scan_run.id,
                 symbol=plan.symbol,
@@ -95,6 +150,11 @@ def run_weekly_scan():
                 capital_required=plan.capital_required,
                 max_loss=plan.max_loss,
                 status="WATCHLIST",
+                ai_explanation=(
+                    analysis.explanation.model_dump_json()
+                    if analysis.explanation
+                    else None
+                ),
             )
             db.add(rec)
 
@@ -105,6 +165,8 @@ def run_weekly_scan():
             logger.info("NO TRADE THIS WEEK")
         else:
             logger.info(f"Scan complete. Found {len(final_picks)} picks.")
+
+        _send_telegram_report(final_picks, regime)
 
     except Exception as e:
         scan_run.status = "FAILED"

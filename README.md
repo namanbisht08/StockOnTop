@@ -72,8 +72,10 @@ follow. Notable simplifications, documented in code where they matter most:
 - [x] Milestone 4 — Strategy
 - [x] Milestone 5 — Risk
 - [x] Milestone 6 — Backtesting
-- [ ] Milestone 7 — AI
-- [ ] Milestone 8 — Reporting
+- [x] Milestone 7 — AI (LLM abstraction, structured explanations, failure fallback
+      done; news summarization via GDELT/NSE filings not yet built)
+- [x] Milestone 8 — Reporting (text report + Telegram delivery + recommendation
+      persistence done; HTML report and email are optional/deferred per the plan)
 - [ ] Milestone 9 — Paper trading
 - [ ] Milestone 10 — Free production execution
 
