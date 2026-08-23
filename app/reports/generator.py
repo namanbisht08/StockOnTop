@@ -13,6 +13,13 @@ PICK_EMOJI = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣"]
 
 DISCLAIMER = "Educational/research output. No guaranteed returns."
 
+# HTML parse_mode - TelegramNotifier must be told to send with parse_mode="HTML"
+# for this to render as a link rather than literal tag text.
+BOT_FOOTER_HTML = (
+    "Created by Naman Singh Bisht (namanbisht.com) · "
+    '<a href="https://www.linkedin.com/in/naman-singh-bisht/">LinkedIn</a>'
+)
+
 DAILY_STATUS_LABELS = {
     "ENTERED": "Entry filled today",
     "STILL_WATCHING": "Waiting for entry",
@@ -27,6 +34,15 @@ DAILY_STATUS_LABELS = {
 
 def _regime_emoji(regime: str) -> str:
     return REGIME_EMOJI.get(regime, "⚪")
+
+
+def _escape_html(text: str) -> str:
+    """Telegram's HTML parse_mode only requires escaping these three - order
+    matters (escape & first). Needed because some real NIFTY 500 tickers
+    (M&M, GVT&D, ARE&M, J&KBANK) contain '&', which would otherwise break
+    parsing of the footer's <a> tag and fail the entire send.
+    """
+    return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
 def generate_text_report(
@@ -114,16 +130,17 @@ def generate_telegram_message(
     ]
 
     if not picks:
-        lines.append(note or "NO TRADE THIS WEEK")
+        lines.append(_escape_html(note) if note else "NO TRADE THIS WEEK")
     else:
         if note:
-            lines.append(note)
+            lines.append(_escape_html(note))
             lines.append("")
         for idx, plan in enumerate(picks):
             marker = PICK_EMOJI[idx] if idx < len(PICK_EMOJI) else f"{idx + 1}."
+            symbol = _escape_html(plan.symbol)
             lines.extend(
                 [
-                    f"{marker} {plan.symbol} - Score {plan.score:.0f}",
+                    f"{marker} {symbol} - Score {plan.score:.0f}",
                     f"Entry: ₹{plan.entry_low:,.0f}-{plan.entry_high:,.0f}",
                     f"SL: ₹{plan.stop_loss:,.0f}",
                     f"T1: ₹{plan.target_1:,.0f}",
@@ -135,7 +152,7 @@ def generate_telegram_message(
                 ]
             )
 
-    lines.append(DISCLAIMER)
+    lines.append(BOT_FOOTER_HTML)
     return "\n".join(lines)
 
 
@@ -146,7 +163,9 @@ def generate_daily_status_message(digest: List[Dict[str, str]]) -> str:
     lines = ["DAILY POSITION STATUS", ""]
     for entry in digest:
         label = DAILY_STATUS_LABELS.get(entry["status"], entry["status"])
-        lines.append(f"{entry['symbol']}: {label} - {entry['detail']}")
+        symbol = _escape_html(entry["symbol"])
+        detail = _escape_html(entry["detail"])
+        lines.append(f"{symbol}: {label} - {detail}")
     lines.append("")
-    lines.append(DISCLAIMER)
+    lines.append(BOT_FOOTER_HTML)
     return "\n".join(lines)

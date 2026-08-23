@@ -1,5 +1,5 @@
 import logging
-from typing import List
+from typing import List, Optional
 
 import httpx
 
@@ -23,22 +23,21 @@ class TelegramNotifier:
         self.chat_id = chat_id
         self.timeout = timeout
 
-    def send_message(self, text: str) -> None:
+    def send_message(self, text: str, parse_mode: Optional[str] = None) -> None:
         for chunk in self._chunk(text):
-            self._send_single(chunk)
+            self._send_single(chunk, parse_mode)
 
-    def _send_single(self, text: str) -> None:
+    def _send_single(self, text: str, parse_mode: Optional[str] = None) -> None:
         url = f"https://api.telegram.org/bot{self.bot_token}/sendMessage"
+        payload = {
+            "chat_id": self.chat_id,
+            "text": text,
+            "disable_web_page_preview": True,
+        }
+        if parse_mode:
+            payload["parse_mode"] = parse_mode
         try:
-            response = httpx.post(
-                url,
-                json={
-                    "chat_id": self.chat_id,
-                    "text": text,
-                    "disable_web_page_preview": True,
-                },
-                timeout=self.timeout,
-            )
+            response = httpx.post(url, json=payload, timeout=self.timeout)
             response.raise_for_status()
             data = response.json()
             if not data.get("ok", False):

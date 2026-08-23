@@ -77,14 +77,25 @@ def test_telegram_message_no_trade_this_week():
     assert "NO TRADE THIS WEEK" in message
 
 
-def test_telegram_message_includes_pick_and_disclaimer():
+def test_telegram_message_includes_pick_and_footer():
     message = generate_telegram_message([_plan()], "BULLISH", 100_000.0)
 
     assert "1️⃣ XYZ - Score 87" in message
     assert "Entry: ₹1,250-1,265" in message
     assert "SL: ₹1,210" in message
     assert "Qty: 24" in message
-    assert "No guaranteed returns." in message
+    assert "Naman Singh Bisht" in message
+    assert (
+        '<a href="https://www.linkedin.com/in/naman-singh-bisht/">LinkedIn</a>'
+        in message
+    )
+    assert "No guaranteed returns." not in message
+
+
+def test_telegram_message_escapes_ampersand_in_symbol():
+    message = generate_telegram_message([_plan("M&M")], "BULLISH", 100_000.0)
+    assert "M&amp;M" in message
+    assert "M&M -" not in message  # raw ampersand must not reach an HTML-mode send
 
 
 def test_telegram_message_numbers_multiple_picks():
@@ -123,8 +134,15 @@ def test_daily_status_message_formats_each_entry():
     message = generate_daily_status_message(digest)
 
     assert "XYZ: Holding - day 2 of 20" in message
-    assert "ABC: Stopped out today - exit at Rs.95.00, net P&L Rs.-500.00" in message
-    assert "No guaranteed returns." in message
+    # the literal "&" in the P&L detail must come through escaped too
+    assert (
+        "ABC: Stopped out today - exit at Rs.95.00, net P&amp;L Rs.-500.00" in message
+    )
+    assert (
+        '<a href="https://www.linkedin.com/in/naman-singh-bisht/">LinkedIn</a>'
+        in message
+    )
+    assert "No guaranteed returns." not in message
 
 
 def test_daily_status_message_falls_back_to_raw_status_for_unknown_codes():

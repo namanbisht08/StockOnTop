@@ -71,7 +71,7 @@ def _send_telegram_report(final_picks, regime: str, note: Optional[str] = None) 
         notifier = TelegramNotifier(
             settings.telegram_bot_token, settings.telegram_chat_id
         )
-        notifier.send_message(message)
+        notifier.send_message(message, parse_mode="HTML")
         logger.info("Telegram notification sent")
     except TelegramNotificationError as e:
         # A failed notification must never fail the scan itself - the

@@ -40,6 +40,22 @@ def test_send_message_posts_to_telegram_api(monkeypatch):
     assert url == "https://api.telegram.org/bottok/sendMessage"
     assert payload["chat_id"] == "123"
     assert payload["text"] == "hello"
+    assert "parse_mode" not in payload
+
+
+def test_send_message_includes_parse_mode_when_given(monkeypatch):
+    calls = []
+
+    def fake_post(url, json=None, timeout=None):
+        calls.append(json)
+        return _FakeResponse({"ok": True})
+
+    monkeypatch.setattr(httpx, "post", fake_post)
+    notifier = TelegramNotifier(bot_token="tok", chat_id="123")
+
+    notifier.send_message("<b>hi</b>", parse_mode="HTML")
+
+    assert calls[0]["parse_mode"] == "HTML"
 
 
 def test_send_message_raises_on_http_error(monkeypatch):

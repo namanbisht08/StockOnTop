@@ -159,7 +159,7 @@ def _send_daily_digest(digest: List[Dict]) -> None:
         notifier = TelegramNotifier(
             settings.telegram_bot_token, settings.telegram_chat_id
         )
-        notifier.send_message(message)
+        notifier.send_message(message, parse_mode="HTML")
         logger.info("Daily digest sent")
     except TelegramNotificationError as e:
         logger.error(f"Daily digest failed to send: {e}")
