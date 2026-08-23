@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/logo_fullsize.png" alt="StockOnTop logo" width="360">
+</p>
+
 # AI-Powered Indian Stock Swing Trading System
 
 A production-ready personal swing-trading research and decision-support system for Indian equities.

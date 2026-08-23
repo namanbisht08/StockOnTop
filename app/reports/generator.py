@@ -138,6 +138,8 @@ def generate_telegram_message(
         for idx, plan in enumerate(picks):
             marker = PICK_EMOJI[idx] if idx < len(PICK_EMOJI) else f"{idx + 1}."
             symbol = _escape_html(plan.symbol)
+            profit_t1 = (plan.target_1 - plan.entry_low) * plan.quantity
+            profit_t2 = (plan.target_2 - plan.entry_low) * plan.quantity
             lines.extend(
                 [
                     f"{marker} {symbol} - Score {plan.score:.0f}",
@@ -147,7 +149,10 @@ def generate_telegram_message(
                     f"T2: ₹{plan.target_2:,.0f}",
                     f"R:R: {plan.risk_reward:.1f}",
                     f"Qty: {plan.quantity}",
-                    f"Risk: ₹{plan.max_loss:,.0f}",
+                    f"Capital Required: ₹{plan.capital_required:,.0f}",
+                    f"Risk (Max Loss): ₹{plan.max_loss:,.0f}",
+                    f"Profit @T1: ₹{profit_t1:,.0f}",
+                    f"Profit @T2: ₹{profit_t2:,.0f}",
                     "",
                 ]
             )

@@ -84,6 +84,9 @@ def test_telegram_message_includes_pick_and_footer():
     assert "Entry: ₹1,250-1,265" in message
     assert "SL: ₹1,210" in message
     assert "Qty: 24" in message
+    assert "Capital Required: ₹30,240" in message
+    assert "Profit @T1: ₹2,400" in message
+    assert "Profit @T2: ₹4,080" in message
     assert "Naman Singh Bisht" in message
     assert (
         '<a href="https://www.linkedin.com/in/naman-singh-bisht/">LinkedIn</a>'
