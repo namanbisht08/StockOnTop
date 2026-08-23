@@ -1,4 +1,4 @@
-.PHONY: help install test lint format clean migrate seed download-data backtest weekly-scan run
+.PHONY: help install test lint format clean migrate seed download-data backtest weekly-scan daily-update run
 
 help:
 	@echo "Available commands:"
@@ -12,6 +12,7 @@ help:
 	@echo "  download-data - Download historical data for universe"
 	@echo "  backtest      - Run backtester"
 	@echo "  weekly-scan   - Run weekly scanner"
+	@echo "  daily-update  - Check open positions and send status digest"
 	@echo "  run           - Run the API server"
 
 install:
@@ -47,6 +48,9 @@ backtest:
 
 weekly-scan:
 	PYTHONPATH=. python scripts/run_weekly_scan.py
+
+daily-update:
+	PYTHONPATH=. python scripts/run_daily_update.py
 
 run:
 	uvicorn app.main:app --reload

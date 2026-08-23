@@ -49,7 +49,7 @@ class ScoringConfig(BaseModel):
 class SelectionConfig(BaseModel):
     minimum_score: int = 75
     candidates: int = 10
-    final_picks: int = 3
+    final_picks: int = 4
 
 
 class CostsConfig(BaseModel):

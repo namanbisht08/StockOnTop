@@ -1,6 +1,10 @@
 from datetime import date
 
-from app.reports.generator import generate_telegram_message, generate_text_report
+from app.reports.generator import (
+    generate_daily_status_message,
+    generate_telegram_message,
+    generate_text_report,
+)
 from app.schemas.ai import AIAnalysis, LLMExplanation
 from app.strategy.strategy import TradePlan
 
@@ -89,3 +93,41 @@ def test_telegram_message_numbers_multiple_picks():
     )
     assert "1️⃣ AAA" in message
     assert "2️⃣ BBB" in message
+
+
+def test_telegram_message_note_replaces_no_trade_line_when_no_picks():
+    message = generate_telegram_message(
+        [], "NEUTRAL", 100_000.0, note="All 4 tracked positions are already open."
+    )
+    assert "All 4 tracked positions are already open." in message
+    assert "NO TRADE THIS WEEK" not in message
+
+
+def test_telegram_message_note_is_shown_alongside_picks():
+    message = generate_telegram_message(
+        [_plan()], "BULLISH", 100_000.0, note="1 slot was already filled this week."
+    )
+    assert "1 slot was already filled this week." in message
+    assert "1️⃣ XYZ" in message
+
+
+def test_daily_status_message_formats_each_entry():
+    digest = [
+        {"symbol": "XYZ", "status": "HOLD", "detail": "day 2 of 20"},
+        {
+            "symbol": "ABC",
+            "status": "STOPPED_OUT",
+            "detail": "exit at Rs.95.00, net P&L Rs.-500.00",
+        },
+    ]
+    message = generate_daily_status_message(digest)
+
+    assert "XYZ: Holding - day 2 of 20" in message
+    assert "ABC: Stopped out today - exit at Rs.95.00, net P&L Rs.-500.00" in message
+    assert "No guaranteed returns." in message
+
+
+def test_daily_status_message_falls_back_to_raw_status_for_unknown_codes():
+    digest = [{"symbol": "XYZ", "status": "SOMETHING_NEW", "detail": "n/a"}]
+    message = generate_daily_status_message(digest)
+    assert "XYZ: SOMETHING_NEW - n/a" in message

@@ -1,31 +1,1001 @@
 stocks:
-  - symbol: RELIANCE
-    company_name: Reliance Industries Limited
-    sector: Energy
-  - symbol: TCS
-    company_name: Tata Consultancy Services Limited
-    sector: Information Technology
+  - symbol: WELCORP
+    company_name: WELCORP
+  - symbol: NETWEB
+    company_name: NETWEB
+  - symbol: BSE
+    company_name: BSE
   - symbol: HDFCBANK
-    company_name: HDFC Bank Limited
-    sector: Financial Services
-  - symbol: ICICIBANK
-    company_name: ICICI Bank Limited
-    sector: Financial Services
+    company_name: HDFCBANK
+  - symbol: BALRAMCHIN
+    company_name: BALRAMCHIN
+  - symbol: HSCL
+    company_name: HSCL
+  - symbol: DATAPATTNS
+    company_name: DATAPATTNS
+  - symbol: MCX
+    company_name: MCX
+  - symbol: ETERNAL
+    company_name: ETERNAL
+  - symbol: URBANCO
+    company_name: URBANCO
+  - symbol: JBMA
+    company_name: JBMA
+  - symbol: DIXON
+    company_name: DIXON
+  - symbol: HINDZINC
+    company_name: HINDZINC
+  - symbol: PAYTM
+    company_name: PAYTM
+  - symbol: HINDCOPPER
+    company_name: HINDCOPPER
+  - symbol: IIFL
+    company_name: IIFL
+  - symbol: RELIANCE
+    company_name: RELIANCE
   - symbol: INFY
-    company_name: Infosys Limited
-    sector: Information Technology
-  - symbol: ITC
-    company_name: ITC Limited
-    sector: Fast Moving Consumer Goods
+    company_name: INFY
   - symbol: SBIN
-    company_name: State Bank of India
-    sector: Financial Services
+    company_name: SBIN
+  - symbol: CARTRADE
+    company_name: CARTRADE
+  - symbol: ICICIBANK
+    company_name: ICICIBANK
+  - symbol: VEDL
+    company_name: VEDL
+  - symbol: KOTAKBANK
+    company_name: KOTAKBANK
+  - symbol: LENSKART
+    company_name: LENSKART
+  - symbol: M&M
+    company_name: M&M
   - symbol: BHARTIARTL
-    company_name: Bharti Airtel Limited
-    sector: Telecommunication
-  - symbol: BAJFINANCE
-    company_name: Bajaj Finance Limited
-    sector: Financial Services
+    company_name: BHARTIARTL
+  - symbol: GROWW
+    company_name: GROWW
+  - symbol: INDIGO
+    company_name: INDIGO
+  - symbol: BEL
+    company_name: BEL
+  - symbol: GVT&D
+    company_name: GVT&D
+  - symbol: CDSL
+    company_name: CDSL
   - symbol: LT
-    company_name: Larsen & Toubro Limited
-    sector: Construction
+    company_name: LT
+  - symbol: POWERGRID
+    company_name: POWERGRID
+  - symbol: JINDALSAW
+    company_name: JINDALSAW
+  - symbol: GRASIM
+    company_name: GRASIM
+  - symbol: TATASTEEL
+    company_name: TATASTEEL
+  - symbol: TCS
+    company_name: TCS
+  - symbol: AXISBANK
+    company_name: AXISBANK
+  - symbol: LICI
+    company_name: LICI
+  - symbol: COALINDIA
+    company_name: COALINDIA
+  - symbol: KALYANKJIL
+    company_name: KALYANKJIL
+  - symbol: MUTHOOTFIN
+    company_name: MUTHOOTFIN
+  - symbol: TVSMOTOR
+    company_name: TVSMOTOR
+  - symbol: NESTLEIND
+    company_name: NESTLEIND
+  - symbol: CUMMINSIND
+    company_name: CUMMINSIND
+  - symbol: KAYNES
+    company_name: KAYNES
+  - symbol: BRITANNIA
+    company_name: BRITANNIA
+  - symbol: COFORGE
+    company_name: COFORGE
+  - symbol: HAL
+    company_name: HAL
+  - symbol: ADANIENSOL
+    company_name: ADANIENSOL
+  - symbol: POWERINDIA
+    company_name: POWERINDIA
+  - symbol: MANAPPURAM
+    company_name: MANAPPURAM
+  - symbol: PFC
+    company_name: PFC
+  - symbol: PINELABS
+    company_name: PINELABS
+  - symbol: TMPV
+    company_name: TMPV
+  - symbol: SWIGGY
+    company_name: SWIGGY
+  - symbol: CROMPTON
+    company_name: CROMPTON
+  - symbol: BAJFINANCE
+    company_name: BAJFINANCE
+  - symbol: ONGC
+    company_name: ONGC
+  - symbol: NCC
+    company_name: NCC
+  - symbol: MARUTI
+    company_name: MARUTI
+  - symbol: BDL
+    company_name: BDL
+  - symbol: MEESHO
+    company_name: MEESHO
+  - symbol: PREMIERENE
+    company_name: PREMIERENE
+  - symbol: POLYCAB
+    company_name: POLYCAB
+  - symbol: HFCL
+    company_name: HFCL
+  - symbol: SHRIRAMFIN
+    company_name: SHRIRAMFIN
+  - symbol: SUNPHARMA
+    company_name: SUNPHARMA
+  - symbol: LTM
+    company_name: LTM
+  - symbol: HINDALCO
+    company_name: HINDALCO
+  - symbol: TMCV
+    company_name: TMCV
+  - symbol: IDEA
+    company_name: IDEA
+  - symbol: KFINTECH
+    company_name: KFINTECH
+  - symbol: ASTERDM
+    company_name: ASTERDM
+  - symbol: HEROMOTOCO
+    company_name: HEROMOTOCO
+  - symbol: JSWSTEEL
+    company_name: JSWSTEEL
+  - symbol: BAJAJ-AUTO
+    company_name: BAJAJ-AUTO
+  - symbol: SAIL
+    company_name: SAIL
+  - symbol: EICHERMOT
+    company_name: EICHERMOT
+  - symbol: LAURUSLABS
+    company_name: LAURUSLABS
+  - symbol: NATIONALUM
+    company_name: NATIONALUM
+  - symbol: ZEEL
+    company_name: ZEEL
+  - symbol: ADANIENT
+    company_name: ADANIENT
+  - symbol: AUBANK
+    company_name: AUBANK
+  - symbol: AMBUJACEM
+    company_name: AMBUJACEM
+  - symbol: ATHERENERG
+    company_name: ATHERENERG
+  - symbol: ITC
+    company_name: ITC
+  - symbol: NTPC
+    company_name: NTPC
+  - symbol: NYKAA
+    company_name: NYKAA
+  - symbol: ADANIPOWER
+    company_name: ADANIPOWER
+  - symbol: TECHM
+    company_name: TECHM
+  - symbol: PERSISTENT
+    company_name: PERSISTENT
+  - symbol: AEGISLOG
+    company_name: AEGISLOG
+  - symbol: HCLTECH
+    company_name: HCLTECH
+  - symbol: BANKBARODA
+    company_name: BANKBARODA
+  - symbol: NAM-INDIA
+    company_name: NAM-INDIA
+  - symbol: ADANIPORTS
+    company_name: ADANIPORTS
+  - symbol: LODHA
+    company_name: LODHA
+  - symbol: HDFCAMC
+    company_name: HDFCAMC
+  - symbol: VMM
+    company_name: VMM
+  - symbol: MOTILALOFS
+    company_name: MOTILALOFS
+  - symbol: ACMESOLAR
+    company_name: ACMESOLAR
+  - symbol: HYUNDAI
+    company_name: HYUNDAI
+  - symbol: HDFCLIFE
+    company_name: HDFCLIFE
+  - symbol: BHARATFORG
+    company_name: BHARATFORG
+  - symbol: SOLARINDS
+    company_name: SOLARINDS
+  - symbol: TITAN
+    company_name: TITAN
+  - symbol: REDINGTON
+    company_name: REDINGTON
+  - symbol: HINDUNILVR
+    company_name: HINDUNILVR
+  - symbol: LUPIN
+    company_name: LUPIN
+  - symbol: DLF
+    company_name: DLF
+  - symbol: CHOLAFIN
+    company_name: CHOLAFIN
+  - symbol: BAJAJFINSV
+    company_name: BAJAJFINSV
+  - symbol: JYOTICNC
+    company_name: JYOTICNC
+  - symbol: PNB
+    company_name: PNB
+  - symbol: DMART
+    company_name: DMART
+  - symbol: KEI
+    company_name: KEI
+  - symbol: SONACOMS
+    company_name: SONACOMS
+  - symbol: APOLLOHOSP
+    company_name: APOLLOHOSP
+  - symbol: NMDC
+    company_name: NMDC
+  - symbol: FEDERALBNK
+    company_name: FEDERALBNK
+  - symbol: KEC
+    company_name: KEC
+  - symbol: APARINDS
+    company_name: APARINDS
+  - symbol: INDUSTOWER
+    company_name: INDUSTOWER
+  - symbol: PRESTIGE
+    company_name: PRESTIGE
+  - symbol: BPCL
+    company_name: BPCL
+  - symbol: TATAPOWER
+    company_name: TATAPOWER
+  - symbol: ULTRACEMCO
+    company_name: ULTRACEMCO
+  - symbol: LICHSGFIN
+    company_name: LICHSGFIN
+  - symbol: DIVISLAB
+    company_name: DIVISLAB
+  - symbol: TRENT
+    company_name: TRENT
+  - symbol: ADANIGREEN
+    company_name: ADANIGREEN
+  - symbol: SUZLON
+    company_name: SUZLON
+  - symbol: GODREJCP
+    company_name: GODREJCP
+  - symbol: ABCAPITAL
+    company_name: ABCAPITAL
+  - symbol: BHEL
+    company_name: BHEL
+  - symbol: ICICIGI
+    company_name: ICICIGI
+  - symbol: RPOWER
+    company_name: RPOWER
+  - symbol: DRREDDY
+    company_name: DRREDDY
+  - symbol: SIEMENS
+    company_name: SIEMENS
+  - symbol: BOSCHLTD
+    company_name: BOSCHLTD
+  - symbol: RECLTD
+    company_name: RECLTD
+  - symbol: HINDPETRO
+    company_name: HINDPETRO
+  - symbol: JIOFIN
+    company_name: JIOFIN
+  - symbol: SBICARD
+    company_name: SBICARD
+  - symbol: OFSS
+    company_name: OFSS
+  - symbol: UNITDSPR
+    company_name: UNITDSPR
+  - symbol: PFOCUS
+    company_name: PFOCUS
+  - symbol: MOTHERSON
+    company_name: MOTHERSON
+  - symbol: UNIONBANK
+    company_name: UNIONBANK
+  - symbol: AMBER
+    company_name: AMBER
+  - symbol: MAZDOCK
+    company_name: MAZDOCK
+  - symbol: CHENNPETRO
+    company_name: CHENNPETRO
+  - symbol: MAXHEALTH
+    company_name: MAXHEALTH
+  - symbol: CAMS
+    company_name: CAMS
+  - symbol: SAGILITY
+    company_name: SAGILITY
+  - symbol: WAAREEENER
+    company_name: WAAREEENER
+  - symbol: PIDILITIND
+    company_name: PIDILITIND
+  - symbol: COCHINSHIP
+    company_name: COCHINSHIP
+  - symbol: AUROPHARMA
+    company_name: AUROPHARMA
+  - symbol: TATACONSUM
+    company_name: TATACONSUM
+  - symbol: AWL
+    company_name: AWL
+  - symbol: BANDHANBNK
+    company_name: BANDHANBNK
+  - symbol: GMDCLTD
+    company_name: GMDCLTD
+  - symbol: SBILIFE
+    company_name: SBILIFE
+  - symbol: MRPL
+    company_name: MRPL
+  - symbol: OLECTRA
+    company_name: OLECTRA
+  - symbol: CGPOWER
+    company_name: CGPOWER
+  - symbol: JINDALSTEL
+    company_name: JINDALSTEL
+  - symbol: GAIL
+    company_name: GAIL
+  - symbol: ZENTEC
+    company_name: ZENTEC
+  - symbol: NAVINFLUOR
+    company_name: NAVINFLUOR
+  - symbol: TORNTPHARM
+    company_name: TORNTPHARM
+  - symbol: EXIDEIND
+    company_name: EXIDEIND
+  - symbol: ZYDUSLIFE
+    company_name: ZYDUSLIFE
+  - symbol: IDFCFIRSTB
+    company_name: IDFCFIRSTB
+  - symbol: CGCL
+    company_name: CGCL
+  - symbol: LTF
+    company_name: LTF
+  - symbol: TARIL
+    company_name: TARIL
+  - symbol: WOCKPHARMA
+    company_name: WOCKPHARMA
+  - symbol: CANBK
+    company_name: CANBK
+  - symbol: INDUSINDBK
+    company_name: INDUSINDBK
+  - symbol: IFCI
+    company_name: IFCI
+  - symbol: ANGELONE
+    company_name: ANGELONE
+  - symbol: VBL
+    company_name: VBL
+  - symbol: CIPLA
+    company_name: CIPLA
+  - symbol: ASHOKLEY
+    company_name: ASHOKLEY
+  - symbol: PPLPHARMA
+    company_name: PPLPHARMA
+  - symbol: PTCIL
+    company_name: PTCIL
+  - symbol: GRSE
+    company_name: GRSE
+  - symbol: POLICYBZR
+    company_name: POLICYBZR
+  - symbol: KIRLOSENG
+    company_name: KIRLOSENG
+  - symbol: ENRIN
+    company_name: ENRIN
+  - symbol: WELSPUNLIV
+    company_name: WELSPUNLIV
+  - symbol: BIOCON
+    company_name: BIOCON
+  - symbol: GMRAIRPORT
+    company_name: GMRAIRPORT
+  - symbol: IOC
+    company_name: IOC
+  - symbol: PIRAMALFIN
+    company_name: PIRAMALFIN
+  - symbol: BELRISE
+    company_name: BELRISE
+  - symbol: CPPLUS
+    company_name: CPPLUS
+  - symbol: CARBORUNIV
+    company_name: CARBORUNIV
+  - symbol: LGEINDIA
+    company_name: LGEINDIA
+  - symbol: ASIANPAINT
+    company_name: ASIANPAINT
+  - symbol: SYRMA
+    company_name: SYRMA
+  - symbol: GESHIP
+    company_name: GESHIP
+  - symbol: WIPRO
+    company_name: WIPRO
+  - symbol: ICICIPRULI
+    company_name: ICICIPRULI
+  - symbol: ENDURANCE
+    company_name: ENDURANCE
+  - symbol: MANKIND
+    company_name: MANKIND
+  - symbol: NAUKRI
+    company_name: NAUKRI
+  - symbol: RADICO
+    company_name: RADICO
+  - symbol: RRKABEL
+    company_name: RRKABEL
+  - symbol: RBLBANK
+    company_name: RBLBANK
+  - symbol: YESBANK
+    company_name: YESBANK
+  - symbol: BANKINDIA
+    company_name: BANKINDIA
+  - symbol: COHANCE
+    company_name: COHANCE
+  - symbol: ANANTRAJ
+    company_name: ANANTRAJ
+  - symbol: BRIGADE
+    company_name: BRIGADE
+  - symbol: TENNIND
+    company_name: TENNIND
+  - symbol: APOLLOTYRE
+    company_name: APOLLOTYRE
+  - symbol: PNBHOUSING
+    company_name: PNBHOUSING
+  - symbol: FORTIS
+    company_name: FORTIS
+  - symbol: FORCEMOT
+    company_name: FORCEMOT
+  - symbol: MFSL
+    company_name: MFSL
+  - symbol: HBLENGINE
+    company_name: HBLENGINE
+  - symbol: COLPAL
+    company_name: COLPAL
+  - symbol: ICICIAMC
+    company_name: ICICIAMC
+  - symbol: ACUTAAS
+    company_name: ACUTAAS
+  - symbol: RAILTEL
+    company_name: RAILTEL
+  - symbol: FINCABLES
+    company_name: FINCABLES
+  - symbol: ASTRAL
+    company_name: ASTRAL
+  - symbol: MARICO
+    company_name: MARICO
+  - symbol: GLAND
+    company_name: GLAND
+  - symbol: ANTHEM
+    company_name: ANTHEM
+  - symbol: VOLTAS
+    company_name: VOLTAS
+  - symbol: NEULANDLAB
+    company_name: NEULANDLAB
+  - symbol: PWL
+    company_name: PWL
+  - symbol: PAGEIND
+    company_name: PAGEIND
+  - symbol: HEG
+    company_name: HEG
+  - symbol: TIINDIA
+    company_name: TIINDIA
+  - symbol: SAMMAANCAP
+    company_name: SAMMAANCAP
+  - symbol: PGEL
+    company_name: PGEL
+  - symbol: LLOYDSME
+    company_name: LLOYDSME
+  - symbol: DALBHARAT
+    company_name: DALBHARAT
+  - symbol: ABB
+    company_name: ABB
+  - symbol: HAVELLS
+    company_name: HAVELLS
+  - symbol: MAHABANK
+    company_name: MAHABANK
+  - symbol: EIDPARRY
+    company_name: EIDPARRY
+  - symbol: MSUMI
+    company_name: MSUMI
+  - symbol: ENGINERSIN
+    company_name: ENGINERSIN
+  - symbol: OBEROIRLTY
+    company_name: OBEROIRLTY
+  - symbol: GRAVITA
+    company_name: GRAVITA
+  - symbol: RVNL
+    company_name: RVNL
+  - symbol: JPPOWER
+    company_name: JPPOWER
+  - symbol: 360ONE
+    company_name: 360ONE
+  - symbol: MPHASIS
+    company_name: MPHASIS
+  - symbol: DELHIVERY
+    company_name: DELHIVERY
+  - symbol: NHPC
+    company_name: NHPC
+  - symbol: THELEELA
+    company_name: THELEELA
+  - symbol: UNOMINDA
+    company_name: UNOMINDA
+  - symbol: ABREL
+    company_name: ABREL
+  - symbol: PATANJALI
+    company_name: PATANJALI
+  - symbol: ANURAS
+    company_name: ANURAS
+  - symbol: GODREJPROP
+    company_name: GODREJPROP
+  - symbol: SUPREMEIND
+    company_name: SUPREMEIND
+  - symbol: OIL
+    company_name: OIL
+  - symbol: GLENMARK
+    company_name: GLENMARK
+  - symbol: TATAELXSI
+    company_name: TATAELXSI
+  - symbol: HONASA
+    company_name: HONASA
+  - symbol: EMMVEE
+    company_name: EMMVEE
+  - symbol: INDHOTEL
+    company_name: INDHOTEL
+  - symbol: IRCTC
+    company_name: IRCTC
+  - symbol: CYIENT
+    company_name: CYIENT
+  - symbol: KPITTECH
+    company_name: KPITTECH
+  - symbol: JSWENERGY
+    company_name: JSWENERGY
+  - symbol: AADHARHFC
+    company_name: AADHARHFC
+  - symbol: AARTIIND
+    company_name: AARTIIND
+  - symbol: HDBFS
+    company_name: HDBFS
+  - symbol: OLAELEC
+    company_name: OLAELEC
+  - symbol: DEEPAKNTR
+    company_name: DEEPAKNTR
+  - symbol: APLAPOLLO
+    company_name: APLAPOLLO
+  - symbol: INDIANB
+    company_name: INDIANB
+  - symbol: UPL
+    company_name: UPL
+  - symbol: M&MFIN
+    company_name: M&MFIN
+  - symbol: ATGL
+    company_name: ATGL
+  - symbol: TATATECH
+    company_name: TATATECH
+  - symbol: ACE
+    company_name: ACE
+  - symbol: PETRONET
+    company_name: PETRONET
+  - symbol: CREDITACC
+    company_name: CREDITACC
+  - symbol: JSWINFRA
+    company_name: JSWINFRA
+  - symbol: GRAPHITE
+    company_name: GRAPHITE
+  - symbol: NBCC
+    company_name: NBCC
+  - symbol: JUBLFOOD
+    company_name: JUBLFOOD
+  - symbol: SAILIFE
+    company_name: SAILIFE
+  - symbol: BEML
+    company_name: BEML
+  - symbol: INOXWIND
+    company_name: INOXWIND
+  - symbol: SRF
+    company_name: SRF
+  - symbol: PHOENIXLTD
+    company_name: PHOENIXLTD
+  - symbol: ELGIEQUIP
+    company_name: ELGIEQUIP
+  - symbol: DEVYANI
+    company_name: DEVYANI
+  - symbol: IGL
+    company_name: IGL
+  - symbol: PVRINOX
+    company_name: PVRINOX
+  - symbol: NUVAMA
+    company_name: NUVAMA
+  - symbol: CCL
+    company_name: CCL
+  - symbol: ALKEM
+    company_name: ALKEM
+  - symbol: IRFC
+    company_name: IRFC
+  - symbol: FLUOROCHEM
+    company_name: FLUOROCHEM
+  - symbol: NH
+    company_name: NH
+  - symbol: GODFRYPHLP
+    company_name: GODFRYPHLP
+  - symbol: SYNGENE
+    company_name: SYNGENE
+  - symbol: THERMAX
+    company_name: THERMAX
+  - symbol: RKFORGE
+    company_name: RKFORGE
+  - symbol: SHREECEM
+    company_name: SHREECEM
+  - symbol: MRF
+    company_name: MRF
+  - symbol: AIIL
+    company_name: AIIL
+  - symbol: IPCALAB
+    company_name: IPCALAB
+  - symbol: POONAWALLA
+    company_name: POONAWALLA
+  - symbol: DEEPAKFERT
+    company_name: DEEPAKFERT
+  - symbol: GRANULES
+    company_name: GRANULES
+  - symbol: SAPPHIRE
+    company_name: SAPPHIRE
+  - symbol: TATACAP
+    company_name: TATACAP
+  - symbol: GPIL
+    company_name: GPIL
+  - symbol: TIMKEN
+    company_name: TIMKEN
+  - symbol: TATACHEM
+    company_name: TATACHEM
+  - symbol: NATCOPHARM
+    company_name: NATCOPHARM
+  - symbol: FACT
+    company_name: FACT
+  - symbol: PFIZER
+    company_name: PFIZER
+  - symbol: JAINREC
+    company_name: JAINREC
+  - symbol: SCI
+    company_name: SCI
+  - symbol: TEJASNET
+    company_name: TEJASNET
+  - symbol: TITAGARH
+    company_name: TITAGARH
+  - symbol: PARADEEP
+    company_name: PARADEEP
+  - symbol: BLUESTARCO
+    company_name: BLUESTARCO
+  - symbol: SCHNEIDER
+    company_name: SCHNEIDER
+  - symbol: ARE&M
+    company_name: ARE&M
+  - symbol: GABRIEL
+    company_name: GABRIEL
+  - symbol: SCHAEFFLER
+    company_name: SCHAEFFLER
+  - symbol: FSL
+    company_name: FSL
+  - symbol: LEMONTREE
+    company_name: LEMONTREE
+  - symbol: HOMEFIRST
+    company_name: HOMEFIRST
+  - symbol: PIIND
+    company_name: PIIND
+  - symbol: JMFINANCIL
+    company_name: JMFINANCIL
+  - symbol: BAJAJHLDNG
+    company_name: BAJAJHLDNG
+  - symbol: NLCINDIA
+    company_name: NLCINDIA
+  - symbol: ANANDRATHI
+    company_name: ANANDRATHI
+  - symbol: MMTC
+    company_name: MMTC
+  - symbol: IREDA
+    company_name: IREDA
+  - symbol: DABUR
+    company_name: DABUR
+  - symbol: IDBI
+    company_name: IDBI
+  - symbol: TBOTEK
+    company_name: TBOTEK
+  - symbol: KARURVYSYA
+    company_name: KARURVYSYA
+  - symbol: CONCOR
+    company_name: CONCOR
+  - symbol: CRAFTSMAN
+    company_name: CRAFTSMAN
+  - symbol: USHAMART
+    company_name: USHAMART
+  - symbol: KPRMILL
+    company_name: KPRMILL
+  - symbol: TATACOMM
+    company_name: TATACOMM
+  - symbol: GLAXO
+    company_name: GLAXO
+  - symbol: CESC
+    company_name: CESC
+  - symbol: ZFCVINDIA
+    company_name: ZFCVINDIA
+  - symbol: JSL
+    company_name: JSL
+  - symbol: KIMS
+    company_name: KIMS
+  - symbol: BLUEJET
+    company_name: BLUEJET
+  - symbol: AEGISVOPAK
+    company_name: AEGISVOPAK
+  - symbol: EMCURE
+    company_name: EMCURE
+  - symbol: TEGA
+    company_name: TEGA
+  - symbol: ABBOTINDIA
+    company_name: ABBOTINDIA
+  - symbol: BSOFT
+    company_name: BSOFT
+  - symbol: DCMSHRIRAM
+    company_name: DCMSHRIRAM
+  - symbol: ASAHIINDIA
+    company_name: ASAHIINDIA
+  - symbol: ZENSARTECH
+    company_name: ZENSARTECH
+  - symbol: RAMCOCEM
+    company_name: RAMCOCEM
+  - symbol: BATAINDIA
+    company_name: BATAINDIA
+  - symbol: GICRE
+    company_name: GICRE
+  - symbol: KPIL
+    company_name: KPIL
+  - symbol: CLEAN
+    company_name: CLEAN
+  - symbol: TORNTPOWER
+    company_name: TORNTPOWER
+  - symbol: SARDAEN
+    company_name: SARDAEN
+  - symbol: JUBLINGREA
+    company_name: JUBLINGREA
+  - symbol: INDGN
+    company_name: INDGN
+  - symbol: CHOICEIN
+    company_name: CHOICEIN
+  - symbol: APTUS
+    company_name: APTUS
+  - symbol: JUBLPHARMA
+    company_name: JUBLPHARMA
+  - symbol: CHAMBLFERT
+    company_name: CHAMBLFERT
+  - symbol: PCBL
+    company_name: PCBL
+  - symbol: LTTS
+    company_name: LTTS
+  - symbol: LTFOODS
+    company_name: LTFOODS
+  - symbol: ELECON
+    company_name: ELECON
+  - symbol: BALKRISIND
+    company_name: BALKRISIND
+  - symbol: NEWGEN
+    company_name: NEWGEN
+  - symbol: IEX
+    company_name: IEX
+  - symbol: SONATSOFTW
+    company_name: SONATSOFTW
+  - symbol: FIRSTCRY
+    company_name: FIRSTCRY
+  - symbol: AJANTPHARM
+    company_name: AJANTPHARM
+  - symbol: LALPATHLAB
+    company_name: LALPATHLAB
+  - symbol: TRITURBINE
+    company_name: TRITURBINE
+  - symbol: VTL
+    company_name: VTL
+  - symbol: EMAMILTD
+    company_name: EMAMILTD
+  - symbol: ATUL
+    company_name: ATUL
+  - symbol: BLS
+    company_name: BLS
+  - symbol: JSWCEMENT
+    company_name: JSWCEMENT
+  - symbol: CASTROLIND
+    company_name: CASTROLIND
+  - symbol: ITCHOTELS
+    company_name: ITCHOTELS
+  - symbol: ABDL
+    company_name: ABDL
+  - symbol: SIGNATURE
+    company_name: SIGNATURE
+  - symbol: WHIRLPOOL
+    company_name: WHIRLPOOL
+  - symbol: NIVABUPA
+    company_name: NIVABUPA
+  - symbol: MGL
+    company_name: MGL
+  - symbol: SWANCORP
+    company_name: SWANCORP
+  - symbol: POLYMED
+    company_name: POLYMED
+  - symbol: CANFINHOME
+    company_name: CANFINHOME
+  - symbol: ABFRL
+    company_name: ABFRL
+  - symbol: MEDANTA
+    company_name: MEDANTA
+  - symbol: HUDCO
+    company_name: HUDCO
+  - symbol: INTELLECT
+    company_name: INTELLECT
+  - symbol: IKS
+    company_name: IKS
+  - symbol: CUB
+    company_name: CUB
+  - symbol: JKTYRE
+    company_name: JKTYRE
+  - symbol: BAJAJHFL
+    company_name: BAJAJHFL
+  - symbol: ABSLAMC
+    company_name: ABSLAMC
+  - symbol: MINDACORP
+    company_name: MINDACORP
+  - symbol: ACC
+    company_name: ACC
+  - symbol: NSLNISP
+    company_name: NSLNISP
+  - symbol: J&KBANK
+    company_name: J&KBANK
+  - symbol: SAREGAMA
+    company_name: SAREGAMA
+  - symbol: CENTRALBK
+    company_name: CENTRALBK
+  - symbol: CONCORDBIO
+    company_name: CONCORDBIO
+  - symbol: ESCORTS
+    company_name: ESCORTS
+  - symbol: VIJAYA
+    company_name: VIJAYA
+  - symbol: SUNTV
+    company_name: SUNTV
+  - symbol: ECLERX
+    company_name: ECLERX
+  - symbol: NTPCGREEN
+    company_name: NTPCGREEN
+  - symbol: IGIL
+    company_name: IGIL
+  - symbol: SUNDARMFIN
+    company_name: SUNDARMFIN
+  - symbol: HEXT
+    company_name: HEXT
+  - symbol: CAPLIPOINT
+    company_name: CAPLIPOINT
+  - symbol: AFFLE
+    company_name: AFFLE
+  - symbol: RAINBOW
+    company_name: RAINBOW
+  - symbol: CANHLIFE
+    company_name: CANHLIFE
+  - symbol: SUMICHEM
+    company_name: SUMICHEM
+  - symbol: JWL
+    company_name: JWL
+  - symbol: STARHEALTH
+    company_name: STARHEALTH
+  - symbol: CHOLAHLDNG
+    company_name: CHOLAHLDNG
+  - symbol: NIACL
+    company_name: NIACL
+  - symbol: IRCON
+    company_name: IRCON
+  - symbol: MAPMYINDIA
+    company_name: MAPMYINDIA
+  - symbol: TECHNOE
+    company_name: TECHNOE
+  - symbol: CIEINDIA
+    company_name: CIEINDIA
+  - symbol: GILLETTE
+    company_name: GILLETTE
+  - symbol: NAVA
+    company_name: NAVA
+  - symbol: CEMPRO
+    company_name: CEMPRO
+  - symbol: CEATLTD
+    company_name: CEATLTD
+  - symbol: FIVESTAR
+    company_name: FIVESTAR
+  - symbol: KAJARIACER
+    company_name: KAJARIACER
+  - symbol: GODIGIT
+    company_name: GODIGIT
+  - symbol: CRISIL
+    company_name: CRISIL
+  - symbol: AIAENG
+    company_name: AIAENG
+  - symbol: UBL
+    company_name: UBL
+  - symbol: CHALET
+    company_name: CHALET
+  - symbol: HONAUT
+    company_name: HONAUT
+  - symbol: IRB
+    company_name: IRB
+  - symbol: TATAINVEST
+    company_name: TATAINVEST
+  - symbol: BAYERCROP
+    company_name: BAYERCROP
+  - symbol: BERGEPAINT
+    company_name: BERGEPAINT
+  - symbol: BHARTIHEXA
+    company_name: BHARTIHEXA
+  - symbol: IOB
+    company_name: IOB
+  - symbol: ONESOURCE
+    company_name: ONESOURCE
+  - symbol: AFCONS
+    company_name: AFCONS
+  - symbol: SJVN
+    company_name: SJVN
+  - symbol: ERIS
+    company_name: ERIS
+  - symbol: AAVAS
+    company_name: AAVAS
+  - symbol: LATENTVIEW
+    company_name: LATENTVIEW
+  - symbol: COROMANDEL
+    company_name: COROMANDEL
+  - symbol: JKCEMENT
+    company_name: JKCEMENT
+  - symbol: LINDEINDIA
+    company_name: LINDEINDIA
+  - symbol: INDIAMART
+    company_name: INDIAMART
+  - symbol: RHIM
+    company_name: RHIM
+  - symbol: SBFC
+    company_name: SBFC
+  - symbol: TRIDENT
+    company_name: TRIDENT
+  - symbol: SHYAMMETL
+    company_name: SHYAMMETL
+  - symbol: RITES
+    company_name: RITES
+  - symbol: SOBHA
+    company_name: SOBHA
+  - symbol: UCOBANK
+    company_name: UCOBANK
+  - symbol: ZYDUSWELL
+    company_name: ZYDUSWELL
+  - symbol: 3MINDIA
+    company_name: 3MINDIA
+  - symbol: NUVOCO
+    company_name: NUVOCO
+  - symbol: TTML
+    company_name: TTML
+  - symbol: TRAVELFOOD
+    company_name: TRAVELFOOD
+  - symbol: ABLBL
+    company_name: ABLBL
+  - symbol: JSWDULUX
+    company_name: JSWDULUX
+  - symbol: ITI
+    company_name: ITI
+  - symbol: GODREJIND
+    company_name: GODREJIND
+  - symbol: UTIAMC
+    company_name: UTIAMC
+  - symbol: GALLANTT
+    company_name: GALLANTT
+  - symbol: BBTC
+    company_name: BBTC
+  - symbol: BIKAJI
+    company_name: BIKAJI
+  - symbol: DOMS
+    company_name: DOMS
+  - symbol: SPLPETRO
+    company_name: SPLPETRO
+  - symbol: BLUEDART
+    company_name: BLUEDART
+  - symbol: EIHOTEL
+    company_name: EIHOTEL
+  - symbol: INDIACEM
+    company_name: INDIACEM

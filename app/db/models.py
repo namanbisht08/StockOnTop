@@ -75,6 +75,12 @@ class Indicator(Base):
     stock = relationship("Stock", back_populates="indicators")
 
 
+# Recommendation.status lifecycle (plan section 26): a new pick starts
+# ENTRY_PENDING, moves to ACTIVE once filled, then to one of the terminal
+# states. Both the weekly and daily jobs key off this same open/closed split.
+OPEN_RECOMMENDATION_STATUSES = ("ENTRY_PENDING", "ACTIVE")
+
+
 class Recommendation(Base):
     __tablename__ = "recommendations"
 
@@ -96,7 +102,7 @@ class Recommendation(Base):
     quantity = Column(Integer, nullable=False)
     capital_required = Column(Float, nullable=False)
     max_loss = Column(Float, nullable=False)
-    status = Column(String, default="WATCHLIST")
+    status = Column(String, default="ENTRY_PENDING")
     ai_explanation = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
@@ -143,6 +149,24 @@ class ScanRun(Base):
     error_message = Column(String, nullable=True)
 
     recommendations = relationship("Recommendation", back_populates="scan_run")
+
+
+class DailyUpdateRun(Base):
+    """Idempotency marker for the daily position-monitoring job - mirrors
+    ScanRun's role for the weekly job, keyed by calendar date so a retried
+    trigger the same day is a no-op rather than double-checking positions
+    and double-sending the Telegram digest.
+    """
+
+    __tablename__ = "daily_update_runs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    run_date = Column(Date, unique=True, index=True, nullable=False)
+    started_at = Column(DateTime, default=datetime.utcnow)
+    completed_at = Column(DateTime, nullable=True)
+    positions_checked = Column(Integer, nullable=True)
+    status = Column(String, nullable=False)
+    error_message = Column(String, nullable=True)
 
 
 class News(Base):

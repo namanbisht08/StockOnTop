@@ -35,7 +35,7 @@ scoring:
 selection:
   minimum_score: 75
   candidates: 10
-  final_picks: 3
+  final_picks: 4
 
 # Illustrative placeholders - verify against current SEBI/exchange/broker
 # rates before relying on these for anything beyond research backtesting.

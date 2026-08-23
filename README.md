@@ -64,6 +64,27 @@ follow. Notable simplifications, documented in code where they matter most:
   curve, so they understate intra-period volatility when multiple positions
   are open at once.
 
+## Weekly pick + daily monitoring cycle
+
+Every Sunday, `run_weekly_scan` scores the full NIFTY 500 universe
+(`config/universe.yaml`) and recommends up to `selection.final_picks` (4)
+stocks with deterministic entry/stop/target/quantity. Every day (Mon-Fri),
+`run_daily_update` checks each currently open recommendation against fresh
+market data and reports one of: **entered** (today's candle filled the entry
+zone), **hold** (still open, no action), **stopped out** / **target hit**
+(exit today, with P&L), or **expired - no fill** (never entered in time,
+dropped). Both jobs send a Telegram digest and share the exact same fill/exit
+rules (`app/strategy/execution_rules.py`) so a signal resolves identically
+whether it's being replayed in a backtest or monitored live.
+
+Key design decision: **positions are capped across weeks, not per week.**
+`portfolio.max_positions` (4) is a total concurrently-tracked-position limit,
+not a per-scan quota - if 3 picks from last week are still open, this week's
+scan only fills the 1 remaining slot rather than stacking 4 new positions on
+top of the old ones (which would silently blow past the intended capital/risk
+exposure). A week with 0 available slots still runs and reports as such,
+distinct from "no candidate qualified."
+
 ## Deployment
 
 Runs on a persistent Docker host (not the plan's default GitHub-Actions/local-
@@ -76,12 +97,14 @@ docker compose exec app alembic upgrade head
 docker compose exec app python scripts/seed_universe.py
 docker compose exec app python scripts/download_history.py
 docker compose exec app python scripts/run_weekly_scan.py
+docker compose exec app python scripts/run_daily_update.py
 ```
 
 A host crontab runs `weekly_run.sh` (download fresh data, then scan) every
-Sunday at 12:30 UTC / 18:00 IST, logging to `logs/weekly.log`. `run_weekly_scan`
-has an idempotency guard - a duplicate trigger the same day is a no-op rather
-than a duplicate recommendation or a second Telegram message.
+Sunday at 12:30 UTC / 18:00 IST, and `daily_run.sh` (position check + digest)
+Monday-Friday, logging to `logs/`. Both jobs have an idempotency guard - a
+duplicate trigger the same day is a no-op rather than a duplicate
+recommendation/status update or a second Telegram message.
 
 Notes:
 - `.env` holds real secrets and is never committed; it's copied to the host
@@ -110,7 +133,8 @@ Notes:
       done; news summarization via GDELT/NSE filings not yet built)
 - [x] Milestone 8 — Reporting (text report + Telegram delivery + recommendation
       persistence done; HTML report and email are optional/deferred per the plan)
-- [ ] Milestone 9 — Paper trading
+- [x] Milestone 9 — Paper trading (daily open-position monitoring, outcome
+      tracking, Telegram status digest - see the cycle section above)
 - [x] Milestone 10 — Production execution (weekly cron on a persistent Docker
       host, per the Deployment section above - a paid instance rather than the
       plan's ₹0/month GitHub-Actions/local-cron default, see notes above)

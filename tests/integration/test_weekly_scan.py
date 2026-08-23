@@ -102,6 +102,57 @@ def test_idempotency_guard_skips_second_run_same_day(test_session, monkeypatch):
     assert session.query(ScanRun).filter(ScanRun.status == "COMPLETED").count() == 1
 
 
+def test_symbol_with_open_position_is_skipped_and_not_duplicated(
+    test_session, monkeypatch
+):
+    session = test_session()
+    _seed_flat_index(session)
+    session.add(Stock(symbol="OPEN1", company_name="Already Open", active=True))
+    scan_run = ScanRun(status="COMPLETED")
+    session.add(scan_run)
+    session.commit()
+    session.add(
+        Recommendation(
+            run_id=scan_run.id,
+            symbol="OPEN1",
+            recommendation_date=date.today() - timedelta(days=2),
+            setup_type="BREAKOUT",
+            score=80.0,
+            rank=1,
+            market_regime="BULLISH",
+            current_price=100.0,
+            entry_low=100.0,
+            entry_high=101.0,
+            stop_loss=95.0,
+            target_1=110.0,
+            target_2=115.0,
+            risk_reward=2.0,
+            quantity=10,
+            capital_required=1000.0,
+            max_loss=50.0,
+            status="ENTRY_PENDING",
+        )
+    )
+    session.commit()
+    session.close()
+
+    monkeypatch.setattr(
+        weekly_scan_module,
+        "get_settings",
+        lambda: type("S", (), {"telegram_bot_token": None, "telegram_chat_id": None})(),
+    )
+
+    weekly_scan_module.run_weekly_scan()
+
+    session = test_session()
+    # still exactly one recommendation for OPEN1 - the scan must not have
+    # re-evaluated or duplicated a symbol it's already tracking.
+    assert (
+        session.query(Recommendation).filter(Recommendation.symbol == "OPEN1").count()
+        == 1
+    )
+
+
 def test_insufficient_index_history_defaults_to_neutral_and_still_completes(
     test_session, monkeypatch
 ):

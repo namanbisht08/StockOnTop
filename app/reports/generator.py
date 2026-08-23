@@ -13,6 +13,17 @@ PICK_EMOJI = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣"]
 
 DISCLAIMER = "Educational/research output. No guaranteed returns."
 
+DAILY_STATUS_LABELS = {
+    "ENTERED": "Entry filled today",
+    "STILL_WATCHING": "Waiting for entry",
+    "EXPIRED_NO_FILL": "Expired - never entered the zone",
+    "HOLD": "Holding",
+    "STOPPED_OUT": "Stopped out today",
+    "TARGET_1_HIT": "Target 1 hit today",
+    "TIME_EXIT": "Time exit - holding period ended",
+    "ERROR": "Status check failed",
+}
+
 
 def _regime_emoji(regime: str) -> str:
     return REGIME_EMOJI.get(regime, "⚪")
@@ -88,7 +99,10 @@ def generate_text_report(
 
 
 def generate_telegram_message(
-    picks: List[TradePlan], market_regime: str, capital: float
+    picks: List[TradePlan],
+    market_regime: str,
+    capital: float,
+    note: Optional[str] = None,
 ) -> str:
     """The compact notification (plan section 28)."""
     lines = [
@@ -100,8 +114,11 @@ def generate_telegram_message(
     ]
 
     if not picks:
-        lines.append("NO TRADE THIS WEEK")
+        lines.append(note or "NO TRADE THIS WEEK")
     else:
+        if note:
+            lines.append(note)
+            lines.append("")
         for idx, plan in enumerate(picks):
             marker = PICK_EMOJI[idx] if idx < len(PICK_EMOJI) else f"{idx + 1}."
             lines.extend(
@@ -118,5 +135,18 @@ def generate_telegram_message(
                 ]
             )
 
+    lines.append(DISCLAIMER)
+    return "\n".join(lines)
+
+
+def generate_daily_status_message(digest: List[Dict[str, str]]) -> str:
+    """digest entries are {"symbol": ..., "status": ..., "detail": ...} as
+    produced by app.jobs.daily_update - one per currently-open position.
+    """
+    lines = ["DAILY POSITION STATUS", ""]
+    for entry in digest:
+        label = DAILY_STATUS_LABELS.get(entry["status"], entry["status"])
+        lines.append(f"{entry['symbol']}: {label} - {entry['detail']}")
+    lines.append("")
     lines.append(DISCLAIMER)
     return "\n".join(lines)

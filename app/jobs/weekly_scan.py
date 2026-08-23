@@ -8,7 +8,13 @@ from app.ai.analyzer import CandidateAnalyzer
 from app.ai.provider import build_default_providers
 from app.core.config import get_settings, get_strategy_config
 from app.core.logging import get_logger
-from app.db.models import Candle, Recommendation, ScanRun, Stock
+from app.db.models import (
+    OPEN_RECOMMENDATION_STATUSES,
+    Candle,
+    Recommendation,
+    ScanRun,
+    Stock,
+)
 from app.db.session import SessionLocal
 from app.indicators.engine import calculate_indicators
 from app.reports.generator import generate_telegram_message
@@ -53,14 +59,14 @@ def _already_completed_today(db) -> bool:
     )
 
 
-def _send_telegram_report(final_picks, regime: str) -> None:
+def _send_telegram_report(final_picks, regime: str, note: Optional[str] = None) -> None:
     settings = get_settings()
     if not settings.telegram_bot_token or not settings.telegram_chat_id:
         logger.info("Telegram not configured; skipping notification")
         return
 
     capital = get_strategy_config().portfolio.capital
-    message = generate_telegram_message(final_picks, regime, capital)
+    message = generate_telegram_message(final_picks, regime, capital, note)
     try:
         notifier = TelegramNotifier(
             settings.telegram_bot_token, settings.telegram_chat_id
@@ -86,6 +92,20 @@ def run_weekly_scan():
     db.commit()
 
     try:
+        config = get_strategy_config()
+
+        open_symbols = {
+            row[0]
+            for row in db.query(Recommendation.symbol)
+            .filter(Recommendation.status.in_(OPEN_RECOMMENDATION_STATUSES))
+            .distinct()
+        }
+        available_slots = max(0, config.portfolio.max_positions - len(open_symbols))
+        logger.info(
+            f"{len(open_symbols)} positions already open; {available_slots} slot(s) "
+            f"available this week"
+        )
+
         stocks = db.query(Stock).filter(Stock.active).all()
 
         scan_run.universe_size = len(stocks)
@@ -108,6 +128,10 @@ def run_weekly_scan():
         indicators_by_symbol = {}
 
         for stock in stocks:
+            if stock.symbol in open_symbols:
+                logger.debug(f"{stock.symbol}: already an open position, skipping")
+                continue
+
             df = _load_candle_df(db, stock.symbol)
             if len(df) < MIN_HISTORY_ROWS:
                 logger.info(f"{stock.symbol}: Not enough candles ({len(df)})")
@@ -136,7 +160,7 @@ def run_weekly_scan():
 
         scan_run.candidate_count = len(candidates)
 
-        final_picks = StrategyEngine.select_final_picks(candidates)
+        final_picks = StrategyEngine.select_final_picks(candidates)[:available_slots]
         scan_run.final_count = len(final_picks)
 
         analyzer = CandidateAnalyzer(build_default_providers())
@@ -169,7 +193,7 @@ def run_weekly_scan():
                 quantity=plan.quantity,
                 capital_required=plan.capital_required,
                 max_loss=plan.max_loss,
-                status="WATCHLIST",
+                status="ENTRY_PENDING",
                 ai_explanation=(
                     analysis.explanation.model_dump_json()
                     if analysis.explanation
@@ -181,12 +205,20 @@ def run_weekly_scan():
         scan_run.status = "COMPLETED"
         db.commit()
 
+        note = None
         if not final_picks:
-            logger.info("NO TRADE THIS WEEK")
+            if available_slots == 0:
+                note = (
+                    f"All {config.portfolio.max_positions} tracked positions are "
+                    "already open - no new picks this week."
+                )
+                logger.info(note)
+            else:
+                logger.info("NO TRADE THIS WEEK")
         else:
             logger.info(f"Scan complete. Found {len(final_picks)} picks.")
 
-        _send_telegram_report(final_picks, regime)
+        _send_telegram_report(final_picks, regime, note)
 
     except Exception as e:
         scan_run.status = "FAILED"

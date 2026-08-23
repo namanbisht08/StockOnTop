@@ -5,6 +5,7 @@ from typing import Optional
 import pandas as pd
 
 from app.core.config import CostsConfig, get_strategy_config
+from app.strategy.execution_rules import search_entry_fill, search_exit
 from app.strategy.strategy import TradePlan
 
 
@@ -103,62 +104,40 @@ def simulate_trade(
 
     future_candles = future_candles.reset_index(drop=True)
 
-    entry_pos = None
-    entry_price = None
-    extended_limit = plan.entry_high * (1 + backtest_config.extended_entry_pct / 100)
-
-    for pos in range(min(backtest_config.entry_expiry_days, len(future_candles))):
-        candle = future_candles.iloc[pos]
-        if candle["low"] > extended_limit:
-            break
-        overlaps = candle["low"] <= plan.entry_high and candle["high"] >= plan.entry_low
-        if overlaps:
-            entry_price = min(max(candle["open"], plan.entry_low), plan.entry_high)
-            entry_pos = pos
-            break
-
-    if entry_pos is None or entry_price is None:
+    filled, entry_price, entry_pos, _ = search_entry_fill(
+        future_candles,
+        plan.entry_low,
+        plan.entry_high,
+        backtest_config.extended_entry_pct,
+        backtest_config.entry_expiry_days,
+    )
+    if not filled or entry_price is None or entry_pos is None:
+        # future_candles is the whole known future for this signal, so an
+        # unresolved search here is definitively a missed entry - unlike the
+        # live daily job, no more data will ever arrive to fill it later.
         return _no_fill_result(plan, signal_date)
 
     entry_date = future_candles.iloc[entry_pos]["timestamp"]
     entry_price = entry_price * (1 + costs.slippage_pct / 100)
 
-    window_end = min(
-        entry_pos + backtest_config.max_holding_days - 1, len(future_candles) - 1
+    candles_since_entry = future_candles.iloc[entry_pos:].reset_index(drop=True)
+    exit_reason, exit_price, exit_pos, holding_days = search_exit(
+        candles_since_entry,
+        plan.stop_loss,
+        plan.target_1,
+        backtest_config.max_holding_days,
     )
 
-    exit_price = None
-    exit_date = None
-    exit_reason = None
-    holding_days = 0
-
-    for pos in range(entry_pos, window_end + 1):
-        candle = future_candles.iloc[pos]
-        holding_days = pos - entry_pos + 1
-
-        if candle["low"] <= plan.stop_loss:
-            exit_price = min(candle["open"], plan.stop_loss)
-            exit_reason = "STOPPED_OUT"
-            exit_date = candle["timestamp"]
-            break
-        if candle["high"] >= plan.target_1:
-            exit_price = max(candle["open"], plan.target_1)
-            exit_reason = "TARGET_1_HIT"
-            exit_date = candle["timestamp"]
-            break
-
-    if exit_price is None:
-        last_candle = future_candles.iloc[window_end]
+    if exit_reason is None:
+        last_candle = candles_since_entry.iloc[holding_days - 1]
         exit_price = last_candle["close"]
         exit_date = last_candle["timestamp"]
-        holding_days = window_end - entry_pos + 1
-        ran_out_of_data = (
-            window_end == len(future_candles) - 1
-            and holding_days < backtest_config.max_holding_days
-        )
+        ran_out_of_data = holding_days < backtest_config.max_holding_days
         exit_reason = "END_OF_DATA" if ran_out_of_data else "TIME_EXIT"
+    else:
+        exit_date = candles_since_entry.iloc[exit_pos]["timestamp"]
 
-    assert exit_reason is not None  # always set by one of the branches above
+    assert exit_reason is not None and exit_price is not None  # set above
     exit_price = exit_price * (1 - costs.slippage_pct / 100)
 
     buy_value = entry_price * plan.quantity
