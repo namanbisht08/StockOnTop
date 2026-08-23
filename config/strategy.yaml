@@ -1,0 +1,38 @@
+portfolio:
+  capital: 100000.0
+  max_positions: 4
+  max_portfolio_exposure_pct: 80.0
+  reserve_cash_pct: 20.0
+
+risk:
+  max_risk_per_trade_pct: 1.0
+  max_risk_per_trade_absolute: 1000.0
+  min_risk_reward: 2.0
+  max_stop_loss_pct: 8.0
+  min_stop_loss_pct: 2.0
+
+screening:
+  min_price: 100.0
+  min_average_daily_turnover: 50000000.0
+  min_average_volume_period: 20
+
+technical:
+  sma_fast: 20
+  sma_medium: 50
+  sma_slow: 200
+  rsi_period: 14
+  atr_period: 14
+  volume_period: 20
+
+scoring:
+  trend: 25
+  breakout: 20
+  volume: 15
+  momentum: 15
+  relative_strength: 15
+  fundamentals: 10
+
+selection:
+  minimum_score: 75
+  candidates: 10
+  final_picks: 3
