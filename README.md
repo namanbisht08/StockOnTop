@@ -35,6 +35,35 @@ To run a scan manually:
 make weekly-scan
 ```
 
+To run a historical backtest:
+```bash
+PYTHONPATH=. python scripts/run_backtest.py --start 2023-01-01 --end 2024-01-01 --output backtests/result.json
+```
+Add `--data-dir path/to/csv` to replay from local CSV fixtures (via `CSVProvider`)
+instead of hitting `yfinance`.
+
+### Backtesting assumptions
+
+The backtester (`app/backtest/`) walks forward one decision date per calendar
+week, truncating each symbol's history to that date before recomputing
+indicators, so nothing after the decision date can influence a signal. A
+selected candidate's outcome is then resolved from the real candles that
+follow. Notable simplifications, documented in code where they matter most:
+
+- Entry fills within `backtest.entry_expiry_days` if a candle's range
+  overlaps the entry zone; a gap beyond `extended_entry_pct` is treated as a
+  missed entry rather than chased.
+- A trade closes fully at target_1 (no partial booking toward target_2).
+- If a candle's range touches both the stop and target in the same session,
+  the stop is assumed to fill first.
+- Transaction cost rates in `config/strategy.yaml` (`costs:`) are
+  illustrative placeholders — verify against current SEBI/exchange/broker
+  rates before relying on them beyond research-grade backtesting.
+- Reported CAGR/drawdown/Sharpe are computed off a realized-P&L equity curve
+  (capital + cumulative net P&L by exit date), not a daily mark-to-market
+  curve, so they understate intra-period volatility when multiple positions
+  are open at once.
+
 ## Milestone Status
 
 - [x] Milestone 1 — Project foundation
@@ -42,7 +71,7 @@ make weekly-scan
 - [x] Milestone 3 — Indicators
 - [x] Milestone 4 — Strategy
 - [x] Milestone 5 — Risk
-- [ ] Milestone 6 — Backtesting
+- [x] Milestone 6 — Backtesting
 - [ ] Milestone 7 — AI
 - [ ] Milestone 8 — Reporting
 - [ ] Milestone 9 — Paper trading

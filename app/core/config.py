@@ -52,6 +52,29 @@ class SelectionConfig(BaseModel):
     final_picks: int = 3
 
 
+class CostsConfig(BaseModel):
+    """Illustrative placeholders, not verified current rates.
+
+    Verify against actual SEBI/exchange/broker schedules before using this
+    for anything beyond research-grade backtesting.
+    """
+
+    brokerage_pct: float = 0.03
+    brokerage_max: float = 20.0
+    stt_sell_pct: float = 0.025
+    exchange_txn_pct: float = 0.00297
+    gst_pct: float = 18.0
+    sebi_charges_pct: float = 0.0001
+    stamp_duty_buy_pct: float = 0.015
+    slippage_pct: float = 0.05
+
+
+class BacktestConfig(BaseModel):
+    entry_expiry_days: int = 5
+    max_holding_days: int = 20
+    extended_entry_pct: float = 3.0
+
+
 class StrategyConfig(BaseModel):
     portfolio: PortfolioConfig = PortfolioConfig()
     risk: RiskConfig = RiskConfig()
@@ -59,6 +82,8 @@ class StrategyConfig(BaseModel):
     technical: TechnicalConfig = TechnicalConfig()
     scoring: ScoringConfig = ScoringConfig()
     selection: SelectionConfig = SelectionConfig()
+    costs: CostsConfig = CostsConfig()
+    backtest: BacktestConfig = BacktestConfig()
 
 
 class Settings(BaseSettings):

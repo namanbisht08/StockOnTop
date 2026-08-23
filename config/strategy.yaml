@@ -36,3 +36,20 @@ selection:
   minimum_score: 75
   candidates: 10
   final_picks: 3
+
+# Illustrative placeholders - verify against current SEBI/exchange/broker
+# rates before relying on these for anything beyond research backtesting.
+costs:
+  brokerage_pct: 0.03
+  brokerage_max: 20.0
+  stt_sell_pct: 0.025
+  exchange_txn_pct: 0.00297
+  gst_pct: 18.0
+  sebi_charges_pct: 0.0001
+  stamp_duty_buy_pct: 0.015
+  slippage_pct: 0.05
+
+backtest:
+  entry_expiry_days: 5
+  max_holding_days: 20
+  extended_entry_pct: 3.0
