@@ -1,0 +1,91 @@
+name: Run Analysis
+
+# Manually trigger the weekly scan or daily update job on-demand, instead of
+# waiting for the instance's own crontab (Sun 11:00 UTC / Mon-Fri 11:00 UTC).
+# Starts the instance if it's stopped, runs the chosen script over SSH, and
+# stops the instance again afterwards - but only if this workflow was the one
+# that started it (leaves it alone if it was already running, e.g. during the
+# scheduled 16:20-17:00 IST window from ec2-schedule.yml).
+#
+# Requires a repo secret EC2_SSH_KEY containing the private key that matches
+# the ubuntu user's authorized_keys on the instance.
+
+on:
+  workflow_dispatch:
+    inputs:
+      job:
+        description: "Which analysis job to run"
+        required: true
+        type: choice
+        options:
+          - weekly
+          - daily
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  INSTANCE_ID: i-05dfaf93a4558bc86
+  AWS_REGION: us-east-1
+
+jobs:
+  run-analysis:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::714361121286:role/StockOnTop-GitHubActions-EC2StartStop
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Ensure instance is running and resolve its IP
+        id: ensure
+        run: |
+          STATE=$(aws ec2 describe-instances --instance-ids "$INSTANCE_ID" \
+            --query "Reservations[0].Instances[0].State.Name" --output text)
+
+          WAS_RUNNING=true
+          if [ "$STATE" != "running" ]; then
+            WAS_RUNNING=false
+            aws ec2 start-instances --instance-ids "$INSTANCE_ID"
+            aws ec2 wait instance-running --instance-ids "$INSTANCE_ID"
+            aws ec2 wait instance-status-ok --instance-ids "$INSTANCE_ID"
+          fi
+
+          IP=$(aws ec2 describe-instances --instance-ids "$INSTANCE_ID" \
+            --query "Reservations[0].Instances[0].PublicIpAddress" --output text)
+
+          echo "was_running=$WAS_RUNNING" >> "$GITHUB_OUTPUT"
+          echo "ip=$IP" >> "$GITHUB_OUTPUT"
+
+      - name: Run job over SSH
+        env:
+          SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+          INSTANCE_IP: ${{ steps.ensure.outputs.ip }}
+          JOB: ${{ github.event.inputs.job }}
+        run: |
+          umask 077
+          printf '%s\n' "$SSH_KEY" > key.pem
+          chmod 600 key.pem
+
+          SCRIPT="daily_run.sh"
+          if [ "$JOB" = "weekly" ]; then
+            SCRIPT="weekly_run.sh"
+          fi
+
+          for i in $(seq 1 10); do
+            if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 \
+              -i key.pem "ubuntu@$INSTANCE_IP" true; then
+              break
+            fi
+            sleep 5
+          done
+
+          ssh -o StrictHostKeyChecking=no -i key.pem "ubuntu@$INSTANCE_IP" \
+            "cd /home/ubuntu/StockOnTop && ./$SCRIPT"
+          rm -f key.pem
+
+      - name: Stop instance (only if this run started it)
+        if: always() && steps.ensure.outputs.was_running == 'false'
+        run: aws ec2 stop-instances --instance-ids "$INSTANCE_ID"
