@@ -93,7 +93,7 @@ class Settings(BaseSettings):
     ollama_base_url: str = "http://localhost:11434"
     ollama_model: str = "qwen2.5:7b"
     gemini_api_key: Optional[str] = None
-    gemini_model: str = "gemini-2.0-flash"
+    gemini_model: str = "gemini-flash-latest"
     log_level: str = "DEBUG"
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
