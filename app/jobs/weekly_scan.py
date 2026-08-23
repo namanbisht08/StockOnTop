@@ -1,5 +1,5 @@
 import sys
-from datetime import date
+from datetime import date, datetime, time
 from typing import Optional
 
 import pandas as pd
@@ -39,6 +39,20 @@ def _safe_float(value) -> Optional[float]:
     return float(value)
 
 
+def _already_completed_today(db) -> bool:
+    """Idempotency guard (plan section 46): a retried or manually re-fired
+    trigger on the same day must not create duplicate recommendations or
+    double-send the Telegram report.
+    """
+    today_start = datetime.combine(date.today(), time.min)
+    return (
+        db.query(ScanRun)
+        .filter(ScanRun.status == "COMPLETED", ScanRun.started_at >= today_start)
+        .first()
+        is not None
+    )
+
+
 def _send_telegram_report(final_picks, regime: str) -> None:
     settings = get_settings()
     if not settings.telegram_bot_token or not settings.telegram_chat_id:
@@ -61,6 +75,12 @@ def _send_telegram_report(final_picks, regime: str) -> None:
 
 def run_weekly_scan():
     db = SessionLocal()
+
+    if _already_completed_today(db):
+        logger.info("A weekly scan already completed today; skipping duplicate run")
+        db.close()
+        return
+
     scan_run = ScanRun(status="RUNNING")
     db.add(scan_run)
     db.commit()
