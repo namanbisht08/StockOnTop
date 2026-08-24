@@ -33,10 +33,11 @@ class _FakeProvider:
         self.candles_by_symbol = candles_by_symbol
 
     def get_ohlcv(self, symbol, start, end):
+        # Mirrors real yfinance: `end` is exclusive.
         df = self.candles_by_symbol.get(symbol, pd.DataFrame())
         if df.empty:
             return df
-        mask = (df["timestamp"] >= start) & (df["timestamp"] <= end)
+        mask = (df["timestamp"] >= start) & (df["timestamp"] < end)
         return df[mask].reset_index(drop=True)
 
 
@@ -115,6 +116,29 @@ def test_entry_pending_fills_when_candle_overlaps_zone(test_session, monkeypatch
     rec = session.get(Recommendation, rec_id)
     assert rec.status == "ACTIVE"
     assert rec.outcome.entry_price == pytest.approx(100.5 * 1.0005)
+
+
+def test_entry_pending_fills_using_todays_own_candle(test_session, monkeypatch):
+    """Regression test: yfinance's `end` param is exclusive, so a naive
+    `end=date.today()` would silently drop today's own candle even though
+    it has already closed by the time this job runs in the evening.
+    """
+    session = test_session()
+    run_id = _seed_stock_and_run(session)
+    signal_date = date.today() - timedelta(days=3)
+    rec_id = _make_pending_recommendation(session, run_id, signal_date)
+    session.close()
+
+    provider = _FakeProvider(
+        {"TEST": _candles([(date.today(), 100.5, 101.0, 100.0, 100.8)])}
+    )
+    monkeypatch.setattr(daily_update_module, "YahooFinanceProvider", lambda: provider)
+
+    daily_update_module.run_daily_update()
+
+    session = test_session()
+    rec = session.get(Recommendation, rec_id)
+    assert rec.status == "ACTIVE"
 
 
 def test_entry_pending_expires_after_window(test_session, monkeypatch):

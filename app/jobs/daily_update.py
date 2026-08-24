@@ -40,7 +40,11 @@ def _fetch_candles_after(provider, symbol: str, since: date) -> pd.DataFrame:
     "just yesterday" so a missed run (instance downtime, etc.) is caught up
     on the next run rather than silently skipping days.
     """
-    end = date.today()
+    # yfinance's `end` is exclusive, so today's own candle (already closed by
+    # the time this job runs in the evening) would otherwise be dropped -
+    # this caused every open position to report "no new data yet" even when
+    # today's close had already crossed the entry zone.
+    end = date.today() + timedelta(days=1)
     start = since - timedelta(days=5)
     df = provider.get_ohlcv(symbol, start, end)
     if df.empty:
