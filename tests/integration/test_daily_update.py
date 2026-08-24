@@ -311,6 +311,107 @@ def test_active_position_holds_when_no_trigger(test_session, monkeypatch):
     assert rec.outcome.exit_date is None
 
 
+def test_closed_digest_entry_reuses_persisted_outcome():
+    rec = Recommendation(symbol="CLOSED", quantity=20, stop_loss=45.0, target_1=60.0, target_2=65.0)
+    rec.outcome = RecommendationOutcome(
+        entry_price=50.5, exit_price=45.2, exit_reason="STOPPED_OUT", net_pnl=-111.0
+    )
+
+    entry = daily_update_module._closed_digest_entry(rec)
+
+    assert entry == {
+        "symbol": "CLOSED",
+        "status": "STOPPED_OUT",
+        "detail": "exit at Rs.45.20, net P&L Rs.-111.00",
+        "entry_price": 50.5,
+        "current_price": 45.2,
+        "quantity": 20,
+        "stop_loss": 45.0,
+        "target_1": 60.0,
+        "target_2": 65.0,
+        "net_pnl": -111.0,
+    }
+
+
+def test_closed_digest_entry_returns_none_when_never_filled():
+    rec = Recommendation(symbol="NEVER", quantity=10)
+    rec.outcome = None
+    assert daily_update_module._closed_digest_entry(rec) is None
+
+
+def test_daily_update_keeps_current_cohorts_closed_positions_in_digest(
+    test_session, monkeypatch
+):
+    """A position that already stopped out (or hit target) in an earlier run
+    must keep appearing in later daily digests for the rest of its cohort's
+    cycle - the capital invested there is real and belongs in the overall
+    invested/P&L picture, not just what's still open today.
+    """
+    session = test_session()
+    run_id = _seed_stock_and_run(session)
+
+    # a still-open recommendation in the same cohort (run_id)
+    _make_pending_recommendation(session, run_id, date.today() - timedelta(days=1))
+
+    session.add(Stock(symbol="CLOSED", company_name="Closed Co", active=True))
+    closed_rec = Recommendation(
+        run_id=run_id,
+        symbol="CLOSED",
+        recommendation_date=date.today() - timedelta(days=1),
+        setup_type="BREAKOUT",
+        score=80.0,
+        rank=2,
+        market_regime="BULLISH",
+        current_price=50.0,
+        entry_low=50.0,
+        entry_high=51.0,
+        stop_loss=45.0,
+        target_1=60.0,
+        target_2=65.0,
+        risk_reward=2.0,
+        quantity=20,
+        capital_required=1000.0,
+        max_loss=100.0,
+        status="STOPPED_OUT",
+    )
+    session.add(closed_rec)
+    session.commit()
+    session.add(
+        RecommendationOutcome(
+            recommendation_id=closed_rec.id,
+            entry_price=50.5,
+            entry_date=date.today() - timedelta(days=1),
+            exit_price=45.2,
+            exit_date=date.today(),
+            exit_reason="STOPPED_OUT",
+            gross_pnl=-106.0,
+            charges=5.0,
+            net_pnl=-111.0,
+            return_pct=-11.0,
+            holding_days=1,
+        )
+    )
+    session.commit()
+    session.close()
+
+    captured = {}
+    monkeypatch.setattr(
+        daily_update_module, "_send_daily_digest", lambda digest: captured.update(digest=digest)
+    )
+    monkeypatch.setattr(
+        daily_update_module, "YahooFinanceProvider", lambda: _FakeProvider({})
+    )
+
+    daily_update_module.run_daily_update()
+
+    digest = captured["digest"]
+    closed_entry = next(e for e in digest if e["symbol"] == "CLOSED")
+    assert closed_entry["status"] == "STOPPED_OUT"
+    assert closed_entry["net_pnl"] == -111.0
+    assert closed_entry["entry_price"] == 50.5
+    assert closed_entry["current_price"] == 45.2
+
+
 def test_idempotency_guard_skips_second_run_same_day(test_session, monkeypatch):
     session = test_session()
     _seed_stock_and_run(session)

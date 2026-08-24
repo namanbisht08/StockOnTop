@@ -1,6 +1,6 @@
 import sys
 from datetime import date, datetime, timedelta
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import pandas as pd
 
@@ -8,7 +8,7 @@ from app.backtest.simulator import calculate_charges
 from app.core.config import get_settings, get_strategy_config
 from app.core.logging import get_logger
 from app.data.yahoo_finance import YahooFinanceProvider
-from app.db.models import DailyUpdateRun, Recommendation, RecommendationOutcome
+from app.db.models import DailyUpdateRun, Recommendation, RecommendationOutcome, ScanRun
 from app.db.session import SessionLocal
 from app.reports.generator import generate_daily_status_message
 from app.reports.telegram import TelegramNotificationError, TelegramNotifier
@@ -226,6 +226,33 @@ def _resolve_active(rec: Recommendation, provider, backtest_config, costs) -> Di
     return _apply_exit(rec, outcome, reason, price, exit_date, holding_days, costs)
 
 
+def _closed_digest_entry(rec: Recommendation) -> Optional[Dict]:
+    """Re-surfaces an already-resolved position (stopped out, target hit, or
+    time-exited) so it keeps appearing in the daily digest for the rest of
+    its cohort's cycle - capital invested there is real and belongs in the
+    overall invested/P&L picture, not just positions still open today.
+    Never re-evaluates anything; only reads the outcome already persisted by
+    _apply_exit. A recommendation that never filled at all (EXPIRED_NO_FILL)
+    has no outcome/exit_reason and never had capital in it, so it's skipped.
+    """
+    outcome = rec.outcome
+    if not outcome or outcome.entry_price is None or outcome.exit_reason is None:
+        return None
+
+    return {
+        "symbol": rec.symbol,
+        "status": outcome.exit_reason,
+        "detail": f"exit at Rs.{outcome.exit_price:,.2f}, net P&L Rs.{outcome.net_pnl:,.2f}",
+        "entry_price": outcome.entry_price,
+        "current_price": outcome.exit_price,
+        "quantity": rec.quantity,
+        "stop_loss": rec.stop_loss,
+        "target_1": rec.target_1,
+        "target_2": rec.target_2,
+        "net_pnl": outcome.net_pnl,
+    }
+
+
 def _send_daily_digest(digest: List[Dict]) -> None:
     settings = get_settings()
     if not settings.telegram_bot_token or not settings.telegram_chat_id:
@@ -284,6 +311,24 @@ def run_daily_update():
                 digest.append(
                     {"symbol": rec.symbol, "status": "ERROR", "detail": str(e)}
                 )
+
+        # Keep this cohort's already-closed positions in the digest too, so
+        # the portfolio summary reflects capital that was invested and lost
+        # or won, not just what's still open today.
+        latest_run = db.query(ScanRun).order_by(ScanRun.id.desc()).first()
+        if latest_run is not None:
+            closed_recs = (
+                db.query(Recommendation)
+                .filter(
+                    Recommendation.run_id == latest_run.id,
+                    Recommendation.status.notin_(OPEN_STATUSES),
+                )
+                .all()
+            )
+            for rec in closed_recs:
+                entry = _closed_digest_entry(rec)
+                if entry is not None:
+                    digest.append(entry)
 
         db.commit()
 
