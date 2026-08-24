@@ -206,9 +206,10 @@ def test_active_position_with_no_new_data_still_reports_known_fields(
 ):
     """Regression test: when there's no new candle since entry (e.g. the
     position was entered earlier today and no new trading day has passed),
-    only current_price/mark-to-market is genuinely unknown - entry price,
-    quantity, stop-loss, and targets are already known from the DB and must
-    still be reported rather than blanked out as N/A.
+    entry price, quantity, stop-loss, and targets are already known from the
+    DB and must still be reported rather than blanked out as N/A. If the
+    data feed has nothing at all for this symbol, current_price is genuinely
+    unknown and stays None.
     """
     from app.core.config import get_strategy_config
 
@@ -225,7 +226,7 @@ def test_active_position_with_no_new_data_still_reports_known_fields(
     session.commit()
 
     rec = session.get(Recommendation, rec_id)
-    provider = _FakeProvider({})  # no candles at all -> "no new data yet"
+    provider = _FakeProvider({})  # nothing at all for this symbol
     config = get_strategy_config()
 
     result = daily_update_module._resolve_active(
@@ -239,7 +240,41 @@ def test_active_position_with_no_new_data_still_reports_known_fields(
     assert result["stop_loss"] == rec.stop_loss
     assert result["target_1"] == rec.target_1
     assert result["target_2"] == rec.target_2
-    assert "current_price" not in result
+    assert result["current_price"] is None
+
+
+def test_active_position_with_no_new_data_falls_back_to_entry_days_close(
+    test_session, monkeypatch
+):
+    """When the position was entered earlier today, the entry day's own
+    close (already known, since that candle is what filled the entry) is a
+    real closing price and should be used to mark the position to market,
+    even though there's no candle *after* the entry date yet.
+    """
+    from app.core.config import get_strategy_config
+
+    session = test_session()
+    run_id = _seed_stock_and_run(session)
+    signal_date = date.today() - timedelta(days=1)
+    rec_id = _make_pending_recommendation(session, run_id, signal_date)
+    session.add(
+        RecommendationOutcome(
+            recommendation_id=rec_id, entry_price=100.5, entry_date=date.today()
+        )
+    )
+    session.get(Recommendation, rec_id).status = "ACTIVE"
+    session.commit()
+
+    rec = session.get(Recommendation, rec_id)
+    # the only candle available is the entry day itself
+    provider = _FakeProvider({"TEST": _candles([(date.today(), 100.5, 103.0, 99.0, 102.0)])})
+    config = get_strategy_config()
+
+    result = daily_update_module._resolve_active(
+        rec, provider, config.backtest, config.costs
+    )
+
+    assert result["current_price"] == 102.0
 
 
 def test_active_position_stops_out(test_session, monkeypatch):

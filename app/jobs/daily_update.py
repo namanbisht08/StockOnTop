@@ -52,6 +52,20 @@ def _fetch_candles_after(provider, symbol: str, since: date) -> pd.DataFrame:
     return df[df["timestamp"] > since].reset_index(drop=True)
 
 
+def _latest_known_close(provider, symbol: str) -> Optional[float]:
+    """The most recent available close as of today, with no lower bound tied
+    to entry/recommendation date - used only to mark an open position to
+    market for display when there's no candle newer than its entry date yet
+    (e.g. it was entered earlier today). Never used for fill/exit decisions.
+    """
+    end = date.today() + timedelta(days=1)
+    start = date.today() - timedelta(days=10)
+    df = provider.get_ohlcv(symbol, start, end)
+    if df.empty:
+        return None
+    return df.iloc[-1]["close"]
+
+
 def _apply_exit(
     rec: Recommendation,
     outcome: RecommendationOutcome,
@@ -180,14 +194,16 @@ def _resolve_active(rec: Recommendation, provider, backtest_config, costs) -> Di
     outcome = rec.outcome
     candles = _fetch_candles_after(provider, rec.symbol, outcome.entry_date)
     if candles.empty:
-        # Only current_price is genuinely unavailable here (no new candle to
-        # mark-to-market with yet) - entry/quantity/SL/targets are already
-        # known from the DB and must still be reported.
+        # No candle newer than the entry date yet (e.g. entered earlier
+        # today) - there's nothing new to check for an exit, but the entry
+        # day's own close is still a real, known closing price and worth
+        # marking to market with rather than showing nothing.
         return {
             "symbol": rec.symbol,
             "status": "HOLD",
             "detail": "no new data yet",
             "entry_price": outcome.entry_price,
+            "current_price": _latest_known_close(provider, rec.symbol),
             "quantity": rec.quantity,
             "stop_loss": rec.stop_loss,
             "target_1": rec.target_1,
