@@ -276,6 +276,27 @@ def test_portfolio_summary_calculation_directly():
     assert summary.missing_close_symbols == []
 
 
+def test_message_uses_emoji_and_bold_highlights():
+    active = _priced_entry(symbol="AAA", current_price=120.0)  # profitable
+    stopped = _priced_entry(
+        symbol="BBB",
+        status="STOPPED_OUT",
+        detail="exit at Rs.90.00, net P&L Rs.-120.50",
+        current_price=90.0,
+        net_pnl=-120.5,
+    )
+    message = render_daily_status_message([active, stopped])
+
+    assert "📊" in message and "🗓️" in message  # title/date
+    assert "🟢" in message  # profitable position marker
+    assert "🔴" in message  # stopped-out marker
+    assert "💼" in message  # portfolio summary header
+    assert "<b>" in message and "</b>" in message  # key figures bolded
+    # bolding must not corrupt the underlying figures tests rely on
+    assert "AAA — ACTIVE" in message
+    assert "Unrealized P&L: +₹200.00 (+20.00%)" in message
+
+
 def test_footer_and_no_disclaimer_preserved():
     message = render_daily_status_message([_priced_entry()])
     assert (

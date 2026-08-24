@@ -11,6 +11,7 @@ duplicates or drifts from the existing trading-cost logic.
 """
 
 from dataclasses import dataclass
+from datetime import date
 from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 from typing import Dict, List, Optional, Tuple
 
@@ -33,6 +34,27 @@ STATUS_LABELS = {
 # Positions where an entry has filled and P&L applies.
 OPEN_PRICED_STATUSES = ("ENTERED", "HOLD")
 CLOSED_PRICED_STATUSES = ("STOPPED_OUT", "TARGET_1_HIT", "TARGET_2_HIT", "TIME_EXIT")
+
+# Cosmetic only - purely additive prefixes/wrapping, never change the
+# underlying wording, so they can't affect any calculation above.
+CLOSED_STATUS_EMOJI = {
+    "ENTERED": "🆕",
+    "STOPPED_OUT": "🔴",
+    "TARGET_1_HIT": "🏆",
+    "TARGET_2_HIT": "🏆",
+    "TIME_EXIT": "⏱️",
+}
+SIMPLE_STATUS_EMOJI = {
+    "STILL_WATCHING": "⏳",
+    "EXPIRED_NO_FILL": "❌",
+    "ERROR": "⚠️",
+}
+
+
+def _pnl_emoji(value: Optional[Decimal]) -> str:
+    if value is None:
+        return "⚪"
+    return "🟢" if value >= 0 else "🔴"
 
 BOT_FOOTER_HTML = (
     "Created by Naman Singh Bisht (namanbisht.com) · "
@@ -290,62 +312,78 @@ def _sl_t1_t2_lines(report: PositionReport) -> List[str]:
     lines = []
     sl_pct = price_distance_pct(report.entry_price, report.stop_loss)
     if report.stop_loss is not None and sl_pct is not None:
-        lines.append(f"SL: {format_inr(report.stop_loss)} ({format_pct(sl_pct)} from entry)")
+        lines.append(
+            f"🛑 SL: {format_inr(report.stop_loss)} ({format_pct(sl_pct)} from entry)"
+        )
     else:
-        lines.append("SL: N/A")
+        lines.append("🛑 SL: N/A")
 
-    for label, level in (("T1", report.target_1), ("T2", report.target_2)):
+    for label, emoji, level in (
+        ("T1", "🎯", report.target_1),
+        ("T2", "🚀", report.target_2),
+    ):
         pct = price_distance_pct(report.entry_price, level)
         if level is not None and pct is not None:
-            lines.append(f"{label}: {format_inr(level)} ({format_pct(pct)})")
+            lines.append(f"{emoji} {label}: {format_inr(level)} ({format_pct(pct)})")
         else:
-            lines.append(f"{label}: N/A")
+            lines.append(f"{emoji} {label}: N/A")
     return lines
 
 
 def _render_priced_block(report: PositionReport) -> List[str]:
     symbol = _escape_html(report.symbol)
     label = STATUS_LABELS.get(report.status, report.status).upper()
-    lines = [f"{symbol} — {label}", _quantity_line(report)]
-
-    entry_str = format_inr(report.entry_price)
-    lines.append(f"Entry: {entry_str}")
 
     qty = report.effective_quantity
     invested = invested_amount(qty, report.entry_price)
-    lines.append(f"Invested: {format_inr(invested)}")
+    unrealized = None
+    if report.is_open and report.current_price is not None:
+        unrealized = unrealized_pnl(report.entry_price, report.current_price, qty)
+
+    if report.is_open:
+        header_emoji = _pnl_emoji(unrealized[0]) if unrealized else "🔷"
+    else:
+        header_emoji = CLOSED_STATUS_EMOJI.get(report.status, "⚪")
+
+    lines = [
+        f"{header_emoji} <b>{symbol} — {label}</b>",
+        f"📦 {_quantity_line(report)}",
+        f"📍 Entry: {format_inr(report.entry_price)}",
+        f"💵 Invested: {format_inr(invested)}",
+    ]
 
     if report.is_open:
         if report.current_price is not None:
-            lines.append(f"Close: {format_inr(report.current_price)}")
-            lines.append(f"Current value: {format_inr(current_market_value(qty, report.current_price))}")
+            lines.append(f"🔔 Close: {format_inr(report.current_price)}")
+            lines.append(
+                f"📈 Current value: {format_inr(current_market_value(qty, report.current_price))}"
+            )
         else:
-            lines.append("Close: N/A (no new data yet)")
-            lines.append("Current value: N/A")
+            lines.append("🔕 Close: N/A (no new data yet)")
+            lines.append("📈 Current value: N/A")
 
     lines.extend(_sl_t1_t2_lines(report))
 
     if report.is_closed:
-        lines.append(f"Exit: {format_inr(report.exit_price)}")
+        lines.append(f"🏁 Exit: {format_inr(report.exit_price)}")
         pct = realized_pnl_pct(report.realized_pnl, invested)
-        pnl_label = "Realized P&L"
         if report.realized_pnl is not None:
             lines.append(
-                f"{pnl_label}: {format_signed_inr(report.realized_pnl)} ({format_pct(pct)})"
+                f"{_pnl_emoji(report.realized_pnl)} <b>Realized P&L: "
+                f"{format_signed_inr(report.realized_pnl)} ({format_pct(pct)})</b>"
             )
         else:
-            lines.append(f"{pnl_label}: N/A")
+            lines.append("⚪ Realized P&L: N/A")
     elif report.is_open:
-        if report.current_price is not None:
-            pnl = unrealized_pnl(report.entry_price, report.current_price, qty)
-            if pnl is not None:
-                lines.append(
-                    f"Unrealized P&L: {format_signed_inr(pnl[0])} ({format_pct(pnl[1])})"
-                )
-            else:
-                lines.append("Unrealized P&L: N/A")
+        if report.current_price is not None and unrealized is not None:
+            lines.append(
+                f"{_pnl_emoji(unrealized[0])} <b>Unrealized P&L: "
+                f"{format_signed_inr(unrealized[0])} ({format_pct(unrealized[1])})</b>"
+            )
+        elif report.current_price is not None:
+            lines.append("⚪ Unrealized P&L: N/A")
         else:
-            lines.append("Unrealized P&L: N/A (no new data yet)")
+            lines.append("⚪ Unrealized P&L: N/A (no new data yet)")
 
     return lines
 
@@ -357,25 +395,34 @@ def _render_simple_block(entry: Dict) -> List[str]:
     label = STATUS_LABELS.get(entry["status"], entry["status"])
     symbol = _escape_html(entry["symbol"])
     detail = _escape_html(entry.get("detail", ""))
-    return [f"{symbol}: {label} - {detail}"]
+    emoji = SIMPLE_STATUS_EMOJI.get(entry["status"], "❔")
+    return [f"{emoji} {symbol}: {label} - {detail}"]
 
 
 def _portfolio_summary_lines(summary: PortfolioSummary) -> List[str]:
+    mood = "🎉" if summary.overall_pnl >= 0 else "😬"
     return [
         "",
-        "PORTFOLIO SUMMARY",
-        f"Cumulative invested: {format_inr(summary.cumulative_invested)}",
-        f"Active capital invested: {format_inr(summary.active_invested)}",
-        f"Active positions value: {format_inr(summary.active_current_value)}",
-        f"Realized P&L: {format_signed_inr(summary.total_realized_pnl)}",
-        f"Unrealized P&L: {format_signed_inr(summary.total_unrealized_pnl)}",
-        f"Overall P&L: {format_signed_inr(summary.overall_pnl)} ({format_pct(summary.overall_pnl_pct)})",
-        f"Overall portfolio value: {format_inr(summary.overall_portfolio_value)}",
+        "💼 <b>PORTFOLIO SUMMARY</b>",
+        f"💰 Cumulative invested: {format_inr(summary.cumulative_invested)}",
+        f"🏦 Active capital invested: {format_inr(summary.active_invested)}",
+        f"📊 Active positions value: {format_inr(summary.active_current_value)}",
+        f"{_pnl_emoji(summary.total_realized_pnl)} Realized P&L: "
+        f"{format_signed_inr(summary.total_realized_pnl)}",
+        f"{_pnl_emoji(summary.total_unrealized_pnl)} Unrealized P&L: "
+        f"{format_signed_inr(summary.total_unrealized_pnl)}",
+        f"{_pnl_emoji(summary.overall_pnl)} <b>Overall P&L: "
+        f"{format_signed_inr(summary.overall_pnl)} ({format_pct(summary.overall_pnl_pct)})</b> {mood}",
+        f"🏆 Overall portfolio value: {format_inr(summary.overall_portfolio_value)}",
     ]
 
 
 def render_daily_status_message(digest: List[Dict]) -> str:
-    lines = ["DAILY POSITION STATUS", ""]
+    lines = [
+        "📊 <b>DAILY POSITION STATUS</b>",
+        f"🗓️ {date.today().strftime('%d %b %Y')}",
+        "",
+    ]
     priced_reports: List[PositionReport] = []
 
     for entry in digest:
