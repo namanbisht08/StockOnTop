@@ -366,21 +366,20 @@ def _render_priced_block(report: PositionReport) -> List[str]:
         header_emoji = CLOSED_STATUS_EMOJI.get(report.status, "⚪")
 
     entry_date_str = _format_date(report.entry_date)
-    entry_suffix = f" (date of entry: {entry_date_str})" if entry_date_str else ""
+    entry_suffix = f" ({entry_date_str})" if entry_date_str else ""
 
     lines = [
         f"{header_emoji} <b>{symbol} — {label}</b>",
         f"📦 {_quantity_line(report)}",
         f"📍 Entry: {format_inr(report.entry_price)}{entry_suffix}",
-        f"💵 Invested: {format_inr(invested)} (Qty × Entry)",
+        f"💵 Invested: {format_inr(invested)}",
     ]
 
     if report.is_open:
         if report.current_price is not None:
             lines.append(f"🔔 Today's closing: {format_inr(report.current_price)}")
             lines.append(
-                f"📈 Current value: {format_inr(current_market_value(qty, report.current_price))} "
-                "(Qty × Today's closing)"
+                f"📈 Current value: {format_inr(current_market_value(qty, report.current_price))}"
             )
         else:
             lines.append("🔕 Today's closing: N/A (no new data yet)")
