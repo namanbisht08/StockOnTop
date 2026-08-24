@@ -52,6 +52,40 @@ def _fetch_candles_after(provider, symbol: str, since: date) -> pd.DataFrame:
     return df[df["timestamp"] > since].reset_index(drop=True)
 
 
+def _apply_exit(
+    rec: Recommendation,
+    outcome: RecommendationOutcome,
+    reason: str,
+    exit_price_raw: float,
+    exit_date,
+    holding_days: int,
+    costs,
+) -> Dict:
+    exit_price = exit_price_raw * (1 - costs.slippage_pct / 100)
+    buy_value = outcome.entry_price * rec.quantity
+    sell_value = exit_price * rec.quantity
+    charges = calculate_charges(buy_value, sell_value, costs)
+    gross_pnl = sell_value - buy_value
+    net_pnl = gross_pnl - charges
+
+    outcome.exit_price = exit_price
+    outcome.exit_date = exit_date
+    outcome.exit_reason = reason
+    outcome.gross_pnl = gross_pnl
+    outcome.charges = charges
+    outcome.net_pnl = net_pnl
+    outcome.return_pct = (net_pnl / buy_value * 100) if buy_value > 0 else 0.0
+    outcome.holding_days = holding_days
+
+    rec.status = STATUS_FOR_EXIT_REASON.get(reason, reason)
+
+    return {
+        "symbol": rec.symbol,
+        "status": reason,
+        "detail": f"exit at Rs.{exit_price:,.2f}, net P&L Rs.{net_pnl:,.2f}",
+    }
+
+
 def _resolve_entry_pending(
     rec: Recommendation, provider, backtest_config, costs
 ) -> Dict:
@@ -79,6 +113,34 @@ def _resolve_entry_pending(
         outcome.entry_price = entry_price
         outcome.entry_date = entry_date
         rec.outcome = outcome
+
+        # The fill and an exit can land in the same batch of candles (e.g. a
+        # same-day stop-out) - check onward from the entry day itself rather
+        # than waiting for tomorrow's run to notice.
+        candles_since_entry = candles.iloc[pos:].reset_index(drop=True)
+        reason, exit_price_raw, exit_pos, holding_days = search_exit(
+            candles_since_entry,
+            rec.stop_loss,
+            rec.target_1,
+            backtest_config.max_holding_days,
+        )
+        if reason is not None:
+            exit_date = candles_since_entry.iloc[exit_pos]["timestamp"]
+            return _apply_exit(
+                rec, outcome, reason, exit_price_raw, exit_date, holding_days, costs
+            )
+        if holding_days >= backtest_config.max_holding_days:
+            last_candle = candles_since_entry.iloc[holding_days - 1]
+            return _apply_exit(
+                rec,
+                outcome,
+                "TIME_EXIT",
+                last_candle["close"],
+                last_candle["timestamp"],
+                holding_days,
+                costs,
+            )
+
         return {
             "symbol": rec.symbol,
             "status": "ENTERED",
@@ -118,36 +180,18 @@ def _resolve_active(rec: Recommendation, provider, backtest_config, costs) -> Di
                 "detail": f"day {holding_days} of {backtest_config.max_holding_days}",
             }
         last_candle = candles.iloc[holding_days - 1]
-        exit_price_raw = last_candle["close"]
-        exit_date = last_candle["timestamp"]
-        reason = "TIME_EXIT"
-    else:
-        exit_price_raw = price
-        exit_date = candles.iloc[pos]["timestamp"]
+        return _apply_exit(
+            rec,
+            outcome,
+            "TIME_EXIT",
+            last_candle["close"],
+            last_candle["timestamp"],
+            holding_days,
+            costs,
+        )
 
-    exit_price = exit_price_raw * (1 - costs.slippage_pct / 100)
-    buy_value = outcome.entry_price * rec.quantity
-    sell_value = exit_price * rec.quantity
-    charges = calculate_charges(buy_value, sell_value, costs)
-    gross_pnl = sell_value - buy_value
-    net_pnl = gross_pnl - charges
-
-    outcome.exit_price = exit_price
-    outcome.exit_date = exit_date
-    outcome.exit_reason = reason
-    outcome.gross_pnl = gross_pnl
-    outcome.charges = charges
-    outcome.net_pnl = net_pnl
-    outcome.return_pct = (net_pnl / buy_value * 100) if buy_value > 0 else 0.0
-    outcome.holding_days = holding_days
-
-    rec.status = STATUS_FOR_EXIT_REASON.get(reason, reason)
-
-    return {
-        "symbol": rec.symbol,
-        "status": reason,
-        "detail": f"exit at Rs.{exit_price:,.2f}, net P&L Rs.{net_pnl:,.2f}",
-    }
+    exit_date = candles.iloc[pos]["timestamp"]
+    return _apply_exit(rec, outcome, reason, price, exit_date, holding_days, costs)
 
 
 def _send_daily_digest(digest: List[Dict]) -> None:

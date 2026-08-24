@@ -141,6 +141,39 @@ def test_entry_pending_fills_using_todays_own_candle(test_session, monkeypatch):
     assert rec.status == "ACTIVE"
 
 
+def test_entry_pending_stops_out_same_day_as_fill(test_session, monkeypatch):
+    """Regression test: a fill and a stop-out can land in the same candle
+    batch (e.g. the entry day itself gaps down through the stop) - this must
+    be caught immediately rather than left as ACTIVE until tomorrow's run.
+    """
+    session = test_session()
+    run_id = _seed_stock_and_run(session)
+    signal_date = date.today() - timedelta(days=3)
+    rec_id = _make_pending_recommendation(session, run_id, signal_date)
+    session.close()
+
+    provider = _FakeProvider(
+        {
+            "TEST": _candles(
+                # entry zone is 100.0-101.0, stop_loss is 95.0 - this single
+                # candle overlaps the entry zone on open and then breaches
+                # the stop before close.
+                [(signal_date + timedelta(days=1), 100.5, 101.0, 90.0, 92.0)]
+            )
+        }
+    )
+    monkeypatch.setattr(daily_update_module, "YahooFinanceProvider", lambda: provider)
+
+    daily_update_module.run_daily_update()
+
+    session = test_session()
+    rec = session.get(Recommendation, rec_id)
+    assert rec.status == "STOPPED_OUT"
+    assert rec.outcome.entry_price == pytest.approx(100.5 * 1.0005)
+    assert rec.outcome.exit_reason == "STOPPED_OUT"
+    assert rec.outcome.net_pnl < 0
+
+
 def test_entry_pending_expires_after_window(test_session, monkeypatch):
     session = test_session()
     run_id = _seed_stock_and_run(session)
