@@ -180,7 +180,19 @@ def _resolve_active(rec: Recommendation, provider, backtest_config, costs) -> Di
     outcome = rec.outcome
     candles = _fetch_candles_after(provider, rec.symbol, outcome.entry_date)
     if candles.empty:
-        return {"symbol": rec.symbol, "status": "HOLD", "detail": "no new data yet"}
+        # Only current_price is genuinely unavailable here (no new candle to
+        # mark-to-market with yet) - entry/quantity/SL/targets are already
+        # known from the DB and must still be reported.
+        return {
+            "symbol": rec.symbol,
+            "status": "HOLD",
+            "detail": "no new data yet",
+            "entry_price": outcome.entry_price,
+            "quantity": rec.quantity,
+            "stop_loss": rec.stop_loss,
+            "target_1": rec.target_1,
+            "target_2": rec.target_2,
+        }
 
     reason, price, pos, holding_days = search_exit(
         candles, rec.stop_loss, rec.target_1, backtest_config.max_holding_days

@@ -201,6 +201,47 @@ def test_entry_pending_expires_after_window(test_session, monkeypatch):
     assert rec.status == "EXPIRED"
 
 
+def test_active_position_with_no_new_data_still_reports_known_fields(
+    test_session, monkeypatch
+):
+    """Regression test: when there's no new candle since entry (e.g. the
+    position was entered earlier today and no new trading day has passed),
+    only current_price/mark-to-market is genuinely unknown - entry price,
+    quantity, stop-loss, and targets are already known from the DB and must
+    still be reported rather than blanked out as N/A.
+    """
+    from app.core.config import get_strategy_config
+
+    session = test_session()
+    run_id = _seed_stock_and_run(session)
+    signal_date = date.today() - timedelta(days=1)
+    rec_id = _make_pending_recommendation(session, run_id, signal_date)
+    session.add(
+        RecommendationOutcome(
+            recommendation_id=rec_id, entry_price=100.5, entry_date=date.today()
+        )
+    )
+    session.get(Recommendation, rec_id).status = "ACTIVE"
+    session.commit()
+
+    rec = session.get(Recommendation, rec_id)
+    provider = _FakeProvider({})  # no candles at all -> "no new data yet"
+    config = get_strategy_config()
+
+    result = daily_update_module._resolve_active(
+        rec, provider, config.backtest, config.costs
+    )
+
+    assert result["status"] == "HOLD"
+    assert result["detail"] == "no new data yet"
+    assert result["entry_price"] == 100.5
+    assert result["quantity"] == rec.quantity
+    assert result["stop_loss"] == rec.stop_loss
+    assert result["target_1"] == rec.target_1
+    assert result["target_2"] == rec.target_2
+    assert "current_price" not in result
+
+
 def test_active_position_stops_out(test_session, monkeypatch):
     session = test_session()
     run_id = _seed_stock_and_run(session)
