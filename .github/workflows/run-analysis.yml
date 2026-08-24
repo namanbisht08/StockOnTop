@@ -67,13 +67,21 @@ jobs:
           STATE=$(aws ec2 describe-instances --instance-ids "$INSTANCE_ID" \
             --query "Reservations[0].Instances[0].State.Name" --output text)
 
+          # "stopping" is transient (e.g. a manual stop still in flight) -
+          # start-instances rejects it outright, so wait it out first.
+          if [ "$STATE" = "stopping" ]; then
+            aws ec2 wait instance-stopped --instance-ids "$INSTANCE_ID"
+            STATE="stopped"
+          fi
+
           WAS_RUNNING=true
-          if [ "$STATE" != "running" ]; then
+          if [ "$STATE" = "stopped" ]; then
             WAS_RUNNING=false
             aws ec2 start-instances --instance-ids "$INSTANCE_ID"
-            aws ec2 wait instance-running --instance-ids "$INSTANCE_ID"
-            aws ec2 wait instance-status-ok --instance-ids "$INSTANCE_ID"
           fi
+
+          aws ec2 wait instance-running --instance-ids "$INSTANCE_ID"
+          aws ec2 wait instance-status-ok --instance-ids "$INSTANCE_ID"
 
           IP=$(aws ec2 describe-instances --instance-ids "$INSTANCE_ID" \
             --query "Reservations[0].Instances[0].PublicIpAddress" --output text)
