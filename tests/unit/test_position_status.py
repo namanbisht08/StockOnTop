@@ -100,7 +100,7 @@ def test_active_profitable_position_renders_correctly():
     assert "Qty: 10" in message
     assert "Entry: ₹100.00" in message
     assert "Invested: ₹1,000.00" in message
-    assert "Close: ₹120.00" in message
+    assert "Today's closing: ₹120.00" in message
     assert "Current value: ₹1,200.00" in message
     assert "SL: ₹90.00 (-10.00% from entry)" in message
     assert "T1: ₹130.00 (+30.00%)" in message
@@ -180,7 +180,7 @@ def test_missing_closing_price_excluded_from_unrealized_and_active_value():
     entry = _priced_entry(current_price=None)
     message = render_daily_status_message([entry])
 
-    assert "Close: N/A (no new data yet)" in message
+    assert "Today's closing: N/A" in message
     assert "Current value: N/A" in message
     assert "Unrealized P&L: N/A" in message
     # capital committed still counts (entry_price/quantity are known), but
