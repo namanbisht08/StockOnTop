@@ -1,16 +1,27 @@
 name: Run Analysis
 
-# Manually trigger the weekly scan or daily update job on-demand, instead of
-# waiting for the instance's own crontab (Sun 11:00 UTC / Mon-Fri 11:00 UTC).
-# Starts the instance if it's stopped, runs the chosen script over SSH, and
-# stops the instance again afterwards - but only if this workflow was the one
-# that started it (leaves it alone if it was already running, e.g. during the
-# scheduled 16:20-17:00 IST window from ec2-schedule.yml).
+# The sole automated trigger for the weekly scan / daily update. Runs the
+# script directly over SSH right after the instance is confirmed reachable,
+# instead of starting the instance and hoping its own crontab fires inside a
+# narrow window - two independent wall-clock schedules (GitHub's cron to
+# start the box, the box's cron to run the job) don't reliably line up:
+# GitHub Actions `schedule` triggers are not guaranteed to fire on time and
+# can be delayed tens of minutes under load, which previously caused the
+# instance to come up (16:42 IST) after the guest crontab's 16:30 IST slot
+# had already passed with the box still off - so the job silently never ran.
+#
+# Starts the instance if it's stopped, waits until SSH is reachable, runs the
+# chosen script, then stops the instance again - but only if this workflow
+# was the one that started it (leaves it alone if it was already running,
+# e.g. someone started it manually via the EC2 Schedule workflow).
 #
 # Requires a repo secret EC2_SSH_KEY containing the private key that matches
 # the ubuntu user's authorized_keys on the instance.
 
 on:
+  schedule:
+    - cron: "0 10 * * 0" # 15:30 IST Sunday - weekly scan
+    - cron: "0 10 * * 1-5" # 15:30 IST Mon-Fri - daily update
   workflow_dispatch:
     inputs:
       job:
@@ -39,6 +50,17 @@ jobs:
           role-to-assume: arn:aws:iam::714361121286:role/StockOnTop-GitHubActions-EC2StartStop
           aws-region: ${{ env.AWS_REGION }}
 
+      - name: Determine job
+        id: job
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "job=${{ github.event.inputs.job }}" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event.schedule }}" = "0 10 * * 0" ]; then
+            echo "job=weekly" >> "$GITHUB_OUTPUT"
+          else
+            echo "job=daily" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Ensure instance is running and resolve its IP
         id: ensure
         run: |
@@ -63,7 +85,7 @@ jobs:
         env:
           SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
           INSTANCE_IP: ${{ steps.ensure.outputs.ip }}
-          JOB: ${{ github.event.inputs.job }}
+          JOB: ${{ steps.job.outputs.job }}
         run: |
           umask 077
           printf '%s\n' "$SSH_KEY" > key.pem

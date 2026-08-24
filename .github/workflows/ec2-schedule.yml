@@ -1,11 +1,14 @@
 name: EC2 Schedule
 
-# Starts the StockOnTop EC2 instance shortly before its cron jobs fire
-# (16:20 IST / 10:50 UTC daily) and stops it once they've had time to finish
-# (17:00 IST / 11:30 UTC). The instance is EBS-backed, so data/swing_trader.db
-# survives the stop/start cycle - only compute is paused, cutting cost from
-# 24/7 to ~40 minutes/day. The weekly job (Sunday) and daily job (Mon-Fri)
-# both run inside this same window (see crontab on the instance).
+# Manual start/stop dropdown for the StockOnTop EC2 instance - no automatic
+# schedule here. Automated start-run-stop for the actual weekly/daily
+# analysis lives in run-analysis.yml, which SSHes in and runs the job
+# directly once the instance is confirmed reachable, rather than starting
+# the instance on one timer and hoping the guest's own crontab fires inside
+# a matching window (GitHub Actions `schedule` triggers can be delayed tens
+# of minutes under load, which previously caused a start-only trigger here
+# to miss the guest crontab's slot entirely). Use this workflow when you
+# want the box up for manual debugging/SSH access outside that flow.
 #
 # Uses GitHub OIDC to assume an IAM role scoped to start/stop only this one
 # instance - no long-lived AWS credentials are stored as secrets.
@@ -18,9 +21,6 @@ name: EC2 Schedule
 # perform sts:AssumeRoleWithWebIdentity".
 
 on:
-  schedule:
-    - cron: "50 10 * * *" # 16:20 IST - start
-    - cron: "30 11 * * *" # 17:00 IST - stop
   workflow_dispatch:
     inputs:
       action:
@@ -52,13 +52,7 @@ jobs:
       - name: Determine action
         id: action
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "action=${{ github.event.inputs.action }}" >> "$GITHUB_OUTPUT"
-          elif [ "${{ github.event.schedule }}" = "50 10 * * *" ]; then
-            echo "action=start" >> "$GITHUB_OUTPUT"
-          else
-            echo "action=stop" >> "$GITHUB_OUTPUT"
-          fi
+          echo "action=${{ github.event.inputs.action }}" >> "$GITHUB_OUTPUT"
 
       - name: Start instance
         if: steps.action.outputs.action == 'start'
