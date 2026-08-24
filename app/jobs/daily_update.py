@@ -89,6 +89,7 @@ def _apply_exit(
         "stop_loss": rec.stop_loss,
         "target_1": rec.target_1,
         "target_2": rec.target_2,
+        "net_pnl": net_pnl,
     }
 
 

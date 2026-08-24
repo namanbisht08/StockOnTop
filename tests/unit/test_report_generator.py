@@ -125,22 +125,19 @@ def test_telegram_message_note_is_shown_alongside_picks():
     assert "1️⃣ XYZ" in message
 
 
-def test_daily_status_message_formats_each_entry():
+def test_daily_status_message_formats_unpriced_entries():
     digest = [
-        {"symbol": "XYZ", "status": "HOLD", "detail": "day 2 of 20"},
+        {"symbol": "XYZ", "status": "STILL_WATCHING", "detail": "day 2 of 5"},
         {
             "symbol": "ABC",
-            "status": "STOPPED_OUT",
-            "detail": "exit at Rs.95.00, net P&L Rs.-500.00",
+            "status": "EXPIRED_NO_FILL",
+            "detail": "never entered the zone within 5 days",
         },
     ]
     message = generate_daily_status_message(digest)
 
-    assert "XYZ: Holding - day 2 of 20" in message
-    # the literal "&" in the P&L detail must come through escaped too
-    assert (
-        "ABC: Stopped out today - exit at Rs.95.00, net P&amp;L Rs.-500.00" in message
-    )
+    assert "XYZ: Waiting for entry - day 2 of 5" in message
+    assert "ABC: Expired - never entered the zone" in message
     assert (
         '<a href="https://www.linkedin.com/in/naman-singh-bisht/">LinkedIn</a>'
         in message
@@ -148,7 +145,9 @@ def test_daily_status_message_formats_each_entry():
     assert "No guaranteed returns." not in message
 
 
-def test_daily_status_message_shows_distance_and_portfolio_summary():
+def test_daily_status_message_delegates_priced_rendering_to_position_status():
+    # Full formatting/P&L/portfolio-summary coverage lives in
+    # tests/unit/test_position_status.py - this is just a wiring smoke test.
     digest = [
         {
             "symbol": "XYZ",
@@ -160,33 +159,12 @@ def test_daily_status_message_shows_distance_and_portfolio_summary():
             "stop_loss": 90.0,
             "target_1": 120.0,
             "target_2": 130.0,
-        },
-        {
-            "symbol": "ABC",
-            "status": "STOPPED_OUT",
-            "detail": "exit at Rs.45.00, net P&L Rs.-100.00",
-            "entry_price": 50.0,
-            "current_price": 45.0,
-            "quantity": 20,
-            "stop_loss": 45.0,
-            "target_1": 60.0,
-            "target_2": 70.0,
-        },
+        }
     ]
     message = generate_daily_status_message(digest)
 
-    assert "🟢 XYZ: Holding - day 2 of 20" in message
-    assert "🛑 SL: ₹20.00 (+18.2%) away" in message
-    assert "🎯 T1: ₹10.00 (+9.1%) away" in message
-    assert "🎯 T2: ₹20.00 (+18.2%) away" in message
-
-    # a closed-today position gets a marker but no SL/T1/T2 distance line
-    assert "🔴 ABC: Stopped out today - exit at Rs.45.00" in message
-    assert "SL: ₹" not in message.split("ABC")[1].split("Capital Invested")[0]
-
-    assert "💰 Capital Invested: ₹2,000" in message
-    assert "📊 Current Standing: ₹2,000" in message
-    assert "🟢 Overall P&L: ₹0 (+0.0%)" in message
+    assert "XYZ — ACTIVE" in message
+    assert "PORTFOLIO SUMMARY" in message
 
 
 def test_daily_status_message_falls_back_to_raw_status_for_unknown_codes():
