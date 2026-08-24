@@ -6,9 +6,9 @@ name: Run Analysis
 # narrow window - two independent wall-clock schedules (GitHub's cron to
 # start the box, the box's cron to run the job) don't reliably line up:
 # GitHub Actions `schedule` triggers are not guaranteed to fire on time and
-# can be delayed tens of minutes under load, which previously caused the
-# instance to come up (16:42 IST) after the guest crontab's 16:30 IST slot
-# had already passed with the box still off - so the job silently never ran.
+# can be delayed tens of minutes under load, which previously caused a
+# start-only trigger to come up after the guest crontab's slot had already
+# passed with the box still off - so the job silently never ran.
 #
 # Starts the instance if it's stopped, waits until SSH is reachable, runs the
 # chosen script, then stops the instance again - but only if this workflow
@@ -20,8 +20,8 @@ name: Run Analysis
 
 on:
   schedule:
-    - cron: "0 10 * * 0" # 15:30 IST Sunday - weekly scan
-    - cron: "0 10 * * 1-5" # 15:30 IST Mon-Fri - daily update
+    - cron: "30 4 * * 0" # 10:00 IST Sunday - weekly scan
+    - cron: "0 11 * * 1-5" # 16:30 IST Mon-Fri - daily update
   workflow_dispatch:
     inputs:
       job:
@@ -55,7 +55,7 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "job=${{ github.event.inputs.job }}" >> "$GITHUB_OUTPUT"
-          elif [ "${{ github.event.schedule }}" = "0 10 * * 0" ]; then
+          elif [ "${{ github.event.schedule }}" = "30 4 * * 0" ]; then
             echo "job=weekly" >> "$GITHUB_OUTPUT"
           else
             echo "job=daily" >> "$GITHUB_OUTPUT"
