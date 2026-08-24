@@ -83,6 +83,12 @@ def _apply_exit(
         "symbol": rec.symbol,
         "status": reason,
         "detail": f"exit at Rs.{exit_price:,.2f}, net P&L Rs.{net_pnl:,.2f}",
+        "entry_price": outcome.entry_price,
+        "current_price": exit_price,
+        "quantity": rec.quantity,
+        "stop_loss": rec.stop_loss,
+        "target_1": rec.target_1,
+        "target_2": rec.target_2,
     }
 
 
@@ -141,10 +147,17 @@ def _resolve_entry_pending(
                 costs,
             )
 
+        current_price = candles_since_entry.iloc[-1]["close"]
         return {
             "symbol": rec.symbol,
             "status": "ENTERED",
             "detail": f"filled at Rs.{entry_price:,.2f}",
+            "entry_price": entry_price,
+            "current_price": current_price,
+            "quantity": rec.quantity,
+            "stop_loss": rec.stop_loss,
+            "target_1": rec.target_1,
+            "target_2": rec.target_2,
         }
 
     if days_scanned >= backtest_config.entry_expiry_days:
@@ -178,6 +191,12 @@ def _resolve_active(rec: Recommendation, provider, backtest_config, costs) -> Di
                 "symbol": rec.symbol,
                 "status": "HOLD",
                 "detail": f"day {holding_days} of {backtest_config.max_holding_days}",
+                "entry_price": outcome.entry_price,
+                "current_price": candles.iloc[-1]["close"],
+                "quantity": rec.quantity,
+                "stop_loss": rec.stop_loss,
+                "target_1": rec.target_1,
+                "target_2": rec.target_2,
             }
         last_candle = candles.iloc[holding_days - 1]
         return _apply_exit(

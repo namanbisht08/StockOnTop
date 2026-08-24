@@ -148,6 +148,47 @@ def test_daily_status_message_formats_each_entry():
     assert "No guaranteed returns." not in message
 
 
+def test_daily_status_message_shows_distance_and_portfolio_summary():
+    digest = [
+        {
+            "symbol": "XYZ",
+            "status": "HOLD",
+            "detail": "day 2 of 20",
+            "entry_price": 100.0,
+            "current_price": 110.0,
+            "quantity": 10,
+            "stop_loss": 90.0,
+            "target_1": 120.0,
+            "target_2": 130.0,
+        },
+        {
+            "symbol": "ABC",
+            "status": "STOPPED_OUT",
+            "detail": "exit at Rs.45.00, net P&L Rs.-100.00",
+            "entry_price": 50.0,
+            "current_price": 45.0,
+            "quantity": 20,
+            "stop_loss": 45.0,
+            "target_1": 60.0,
+            "target_2": 70.0,
+        },
+    ]
+    message = generate_daily_status_message(digest)
+
+    assert "🟢 XYZ: Holding - day 2 of 20" in message
+    assert "🛑 SL: ₹20.00 (+18.2%) away" in message
+    assert "🎯 T1: ₹10.00 (+9.1%) away" in message
+    assert "🎯 T2: ₹20.00 (+18.2%) away" in message
+
+    # a closed-today position gets a marker but no SL/T1/T2 distance line
+    assert "🔴 ABC: Stopped out today - exit at Rs.45.00" in message
+    assert "SL: ₹" not in message.split("ABC")[1].split("Capital Invested")[0]
+
+    assert "💰 Capital Invested: ₹2,000" in message
+    assert "📊 Current Standing: ₹2,000" in message
+    assert "🟢 Overall P&L: ₹0 (+0.0%)" in message
+
+
 def test_daily_status_message_falls_back_to_raw_status_for_unknown_codes():
     digest = [{"symbol": "XYZ", "status": "SOMETHING_NEW", "detail": "n/a"}]
     message = generate_daily_status_message(digest)

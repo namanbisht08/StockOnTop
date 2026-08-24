@@ -161,16 +161,84 @@ def generate_telegram_message(
     return "\n".join(lines)
 
 
-def generate_daily_status_message(digest: List[Dict[str, str]]) -> str:
-    """digest entries are {"symbol": ..., "status": ..., "detail": ...} as
-    produced by app.jobs.daily_update - one per currently-open position.
+STILL_OPEN_STATUSES = ("ENTERED", "HOLD")
+
+
+def _distance_line(entry: Dict) -> Optional[str]:
+    """SL/T1/T2 distance from the current price, in both rupees and percent -
+    only meaningful for a position that's still open (entered but not yet
+    exited), using entry.get("current_price") as of today's close.
+    """
+    current_price = entry.get("current_price")
+    stop_loss = entry.get("stop_loss")
+    target_1 = entry.get("target_1")
+    target_2 = entry.get("target_2")
+    if current_price is None or stop_loss is None or target_1 is None or target_2 is None:
+        return None
+    if current_price <= 0:
+        return None
+
+    sl_rs = current_price - stop_loss
+    sl_pct = sl_rs / current_price * 100
+    t1_rs = target_1 - current_price
+    t1_pct = t1_rs / current_price * 100
+    t2_rs = target_2 - current_price
+    t2_pct = t2_rs / current_price * 100
+
+    return (
+        f"   \U0001f6d1 SL: ₹{sl_rs:,.2f} ({sl_pct:+.1f}%) away  "
+        f"\U0001f3af T1: ₹{t1_rs:,.2f} ({t1_pct:+.1f}%) away  "
+        f"\U0001f3af T2: ₹{t2_rs:,.2f} ({t2_pct:+.1f}%) away"
+    )
+
+
+def generate_daily_status_message(digest: List[Dict]) -> str:
+    """digest entries are dicts produced by app.jobs.daily_update - one per
+    currently-open position. Beyond symbol/status/detail, an entry may carry
+    entry_price/current_price/quantity/stop_loss/target_1/target_2 when
+    priced data is available, used here for per-position SL/T1/T2 distance
+    and the portfolio-level capital/standing summary.
     """
     lines = ["DAILY POSITION STATUS", ""]
+    total_invested = 0.0
+    total_standing = 0.0
+
     for entry in digest:
         label = DAILY_STATUS_LABELS.get(entry["status"], entry["status"])
         symbol = _escape_html(entry["symbol"])
         detail = _escape_html(entry["detail"])
-        lines.append(f"{symbol}: {label} - {detail}")
+
+        entry_price = entry.get("entry_price")
+        current_price = entry.get("current_price")
+        quantity = entry.get("quantity")
+        priced = entry_price is not None and current_price is not None and quantity
+
+        marker = ""
+        if priced:
+            marker = "\U0001f7e2 " if current_price >= entry_price else "\U0001f534 "
+            total_invested += entry_price * quantity
+            total_standing += current_price * quantity
+
+        lines.append(f"{marker}{symbol}: {label} - {detail}")
+
+        if entry["status"] in STILL_OPEN_STATUSES:
+            distance_line = _distance_line(entry)
+            if distance_line:
+                lines.append(distance_line)
+
+    if total_invested > 0:
+        overall_pnl = total_standing - total_invested
+        overall_pct = overall_pnl / total_invested * 100
+        overall_marker = "\U0001f7e2" if overall_pnl >= 0 else "\U0001f534"
+        lines.extend(
+            [
+                "",
+                f"\U0001f4b0 Capital Invested: ₹{total_invested:,.0f}",
+                f"\U0001f4ca Current Standing: ₹{total_standing:,.0f}",
+                f"{overall_marker} Overall P&L: ₹{overall_pnl:,.0f} ({overall_pct:+.1f}%)",
+            ]
+        )
+
     lines.append("")
     lines.append(BOT_FOOTER_HTML)
     return "\n".join(lines)
