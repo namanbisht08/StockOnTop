@@ -1,3 +1,4 @@
+from datetime import date
 from decimal import Decimal
 
 from app.reports.position_status import (
@@ -295,6 +296,21 @@ def test_message_uses_emoji_and_bold_highlights():
     # bolding must not corrupt the underlying figures tests rely on
     assert "AAA — ACTIVE" in message
     assert "Unrealized P&L: +₹200.00 (+20.00%)" in message
+
+
+def test_entry_line_shows_entry_date_and_formula_annotations():
+    entry = _priced_entry(entry_date=date(2026, 8, 24))
+    message = render_daily_status_message([entry])
+
+    assert "Entry: ₹100.00 (date of entry: Monday, 24 Aug 2026)" in message
+    assert "Invested: ₹1,000.00 (Qty × Entry)" in message
+    assert "Current value: ₹1,200.00 (Qty × Today's closing)" in message
+
+
+def test_entry_date_omitted_gracefully_when_missing():
+    message = render_daily_status_message([_priced_entry()])  # no entry_date key
+    assert "date of entry" not in message
+    assert "Entry: ₹100.00" in message
 
 
 def test_footer_and_no_disclaimer_preserved():

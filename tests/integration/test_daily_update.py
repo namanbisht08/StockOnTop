@@ -349,7 +349,11 @@ def test_active_position_holds_when_no_trigger(test_session, monkeypatch):
 def test_closed_digest_entry_reuses_persisted_outcome():
     rec = Recommendation(symbol="CLOSED", quantity=20, stop_loss=45.0, target_1=60.0, target_2=65.0)
     rec.outcome = RecommendationOutcome(
-        entry_price=50.5, exit_price=45.2, exit_reason="STOPPED_OUT", net_pnl=-111.0
+        entry_price=50.5,
+        entry_date=date(2026, 8, 20),
+        exit_price=45.2,
+        exit_reason="STOPPED_OUT",
+        net_pnl=-111.0,
     )
 
     entry = daily_update_module._closed_digest_entry(rec)
@@ -359,6 +363,7 @@ def test_closed_digest_entry_reuses_persisted_outcome():
         "status": "STOPPED_OUT",
         "detail": "exit at Rs.45.20, net P&L Rs.-111.00",
         "entry_price": 50.5,
+        "entry_date": date(2026, 8, 20),
         "current_price": 45.2,
         "quantity": 20,
         "stop_loss": 45.0,
