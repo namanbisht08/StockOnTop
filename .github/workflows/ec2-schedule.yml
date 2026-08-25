@@ -1,14 +1,20 @@
 name: EC2 Schedule
 
-# Manual start/stop dropdown for the StockOnTop EC2 instance - no automatic
-# schedule here. Automated start-run-stop for the actual weekly/daily
-# analysis lives in run-analysis.yml, which SSHes in and runs the job
+# Manual start/stop dropdown for the StockOnTop EC2 instance, plus a fixed
+# daily safety-net stop. Automated start-run-stop for the actual weekly/
+# daily analysis lives in run-analysis.yml, which SSHes in and runs the job
 # directly once the instance is confirmed reachable, rather than starting
 # the instance on one timer and hoping the guest's own crontab fires inside
 # a matching window (GitHub Actions `schedule` triggers can be delayed tens
 # of minutes under load, which previously caused a start-only trigger here
-# to miss the guest crontab's slot entirely). Use this workflow when you
-# want the box up for manual debugging/SSH access outside that flow.
+# to miss the guest crontab's slot entirely). Use the manual dropdown when
+# you want the box up for debugging/SSH access outside that flow.
+#
+# The scheduled stop here is a separate safety net: run-analysis.yml only
+# stops the instance if IT was the one that started it, so a manual start
+# (for debugging, or this workflow's own dropdown) left running would
+# otherwise rack up cost indefinitely. This always stops it once a day
+# regardless of how or why it was started.
 #
 # Uses GitHub OIDC to assume an IAM role scoped to start/stop only this one
 # instance - no long-lived AWS credentials are stored as secrets.
@@ -21,6 +27,8 @@ name: EC2 Schedule
 # perform sts:AssumeRoleWithWebIdentity".
 
 on:
+  schedule:
+    - cron: "30 11 * * *" # 17:00 IST - safety-net stop, every day
   workflow_dispatch:
     inputs:
       action:
@@ -52,7 +60,11 @@ jobs:
       - name: Determine action
         id: action
         run: |
-          echo "action=${{ github.event.inputs.action }}" >> "$GITHUB_OUTPUT"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "action=${{ github.event.inputs.action }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "action=stop" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Start instance
         if: steps.action.outputs.action == 'start'
