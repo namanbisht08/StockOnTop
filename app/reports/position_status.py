@@ -88,13 +88,18 @@ def _to_decimal(value) -> Optional[Decimal]:
     """None-safe float/int -> Decimal, going via str() so the result is the
     decimal a human would read off the float rather than its raw binary
     representation (Decimal(0.1) != Decimal("0.1")).
+
+    A NaN/Infinity float (e.g. a missing close from the data provider) would
+    otherwise convert into a NaN/Infinite Decimal that raises InvalidOperation
+    the moment it's compared - treated as missing data instead, same as None.
     """
     if value is None:
         return None
     try:
-        return Decimal(str(value))
+        decimal_value = Decimal(str(value))
     except (InvalidOperation, ValueError, TypeError):
         return None
+    return decimal_value if decimal_value.is_finite() else None
 
 
 @dataclass

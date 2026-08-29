@@ -191,6 +191,19 @@ def test_missing_closing_price_excluded_from_unrealized_and_active_value():
     assert "Unrealized P&L: +₹0.00" in message
 
 
+def test_nan_closing_price_treated_as_missing_not_crashing():
+    # A NaN close (e.g. yfinance returning a gap for an illiquid day) must be
+    # dropped to None at the boundary, not survive as Decimal('NaN') - which
+    # raises decimal.InvalidOperation the moment it's compared (as happened
+    # in production on 2026-08-27/28, crashing the daily report entirely).
+    entry = _priced_entry(current_price=float("nan"))
+    message = render_daily_status_message([entry])
+
+    assert "Today's closing: N/A" in message
+    assert "Current value: N/A" in message
+    assert "Unrealized P&L: N/A" in message
+
+
 def test_missing_closing_price_logs_a_warning_naming_the_symbol(caplog):
     import logging
 
