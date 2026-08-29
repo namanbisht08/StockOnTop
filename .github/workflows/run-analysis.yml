@@ -17,6 +17,11 @@ name: Run Analysis
 #
 # Requires a repo secret EC2_SSH_KEY containing the private key that matches
 # the ubuntu user's authorized_keys on the instance.
+#
+# Pulls latest main on the box before running - the box's checkout does not
+# update itself otherwise, so without this step every push to main would
+# silently never take effect (discovered 2026-08-29: a bug fix ran two days
+# in a row against the pre-fix code because of this).
 
 on:
   schedule:
@@ -113,7 +118,7 @@ jobs:
           done
 
           ssh -o StrictHostKeyChecking=no -i key.pem "ubuntu@$INSTANCE_IP" \
-            "cd /home/ubuntu/StockOnTop && ./$SCRIPT"
+            "cd /home/ubuntu/StockOnTop && git pull --ff-only origin main && ./$SCRIPT"
           rm -f key.pem
 
       - name: Stop instance (only if this run started it)
