@@ -468,6 +468,40 @@ def test_idempotency_guard_skips_second_run_same_day(test_session, monkeypatch):
     assert session.query(DailyUpdateRun).count() == 1
 
 
+def test_failed_run_can_be_retried_same_day(test_session, monkeypatch):
+    # A crash must not permanently block the rest of the day's retries - a
+    # FAILED row for today existing should not read as "already handled".
+    # Production hit this on 2026-08-29: a bug crashed the digest send after
+    # marking positions_checked, and a same-day redeploy + manual retry kept
+    # getting silently skipped as "already completed today".
+    session = test_session()
+    _seed_stock_and_run(session)
+    session.close()
+
+    def _raise_provider():
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(daily_update_module, "YahooFinanceProvider", _raise_provider)
+    with pytest.raises(SystemExit):
+        daily_update_module.run_daily_update()
+
+    session = test_session()
+    assert session.query(DailyUpdateRun).one().status == "FAILED"
+    session.close()
+
+    monkeypatch.setattr(
+        daily_update_module, "YahooFinanceProvider", lambda: _FakeProvider({})
+    )
+    daily_update_module.run_daily_update()
+
+    session = test_session()
+    # run_date is unique - the retry must reuse today's row, not insert a
+    # second one, so this should still be exactly one row.
+    run = session.query(DailyUpdateRun).one()
+    assert run.status == "COMPLETED"
+    assert run.error_message is None
+
+
 def test_terminal_positions_are_not_reprocessed(test_session, monkeypatch):
     session = test_session()
     run_id = _seed_stock_and_run(session)

@@ -29,8 +29,17 @@ STATUS_FOR_EXIT_REASON = {
 
 
 def _already_completed_today(db) -> bool:
+    # A FAILED run must not block a retry the same day - otherwise a bug that
+    # crashes the job (e.g. an unhandled data edge case) permanently skips
+    # the digest for the rest of the day even after the bug is fixed and
+    # redeployed, since a row already exists for today's date.
     return (
-        db.query(DailyUpdateRun).filter(DailyUpdateRun.run_date == date.today()).first()
+        db.query(DailyUpdateRun)
+        .filter(
+            DailyUpdateRun.run_date == date.today(),
+            DailyUpdateRun.status != "FAILED",
+        )
+        .first()
         is not None
     )
 
@@ -301,8 +310,16 @@ def run_daily_update():
         db.close()
         return
 
-    run = DailyUpdateRun(run_date=date.today(), status="RUNNING")
-    db.add(run)
+    # run_date is unique, so a retry after an earlier FAILED attempt today
+    # must reuse that row rather than insert a second one for the same date.
+    run = db.query(DailyUpdateRun).filter(DailyUpdateRun.run_date == date.today()).first()
+    if run is not None:
+        run.status = "RUNNING"
+        run.error_message = None
+        run.completed_at = None
+    else:
+        run = DailyUpdateRun(run_date=date.today(), status="RUNNING")
+        db.add(run)
     db.commit()
 
     try:
